@@ -1,1 +1,12 @@
 /* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap');
+
+
+    :root {
+
+        font-family: 'Lexend', sans-serif;
+        --primary-color: #F4A300;
+        --secondary-color: #000000;
+        --tertiary-color: #111111;
+
+    }

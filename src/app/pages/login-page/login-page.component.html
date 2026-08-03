@@ -1,0 +1,80 @@
+<div class="login-wrapper">
+
+  <!-- Left gradient panel -->
+  <div class="brand-panel">
+    <div class="brand-logo">
+        <img src="assets/logo/Logo-DLCKfUMK.webp" alt="ShaktiCart Logo">
+    </div>
+
+    <div class="quote-block">
+      <span class="quote-label">Quote of the Day</span>
+      <p class="quote-text">"{{ quoteOfTheDay }}"</p>
+    </div>
+  </div>
+
+  <!-- Right white login panel -->
+  <div class="form-panel">
+    <div class="form-container">
+
+      <div class="mobile-logo">
+        <img src="assets/logo/Logo-DLCKfUMK.webp" alt="ShaktiCart Logo">
+      </div>
+
+      <h1 class="title">Welcome back</h1>
+      <p class="subtitle">Sign in to access the admin panel</p>
+
+      <form (ngSubmit)="onSubmit()" #loginForm="ngForm" class="login-form">
+
+        <div class="field-group">
+          <label for="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="you@shakticart.com"
+            [(ngModel)]="email"
+            required
+            autocomplete="username"
+          />
+        </div>
+
+        <div class="field-group">
+          <label for="password">Password</label>
+          <div class="password-input">
+            <input
+              [type]="showPassword ? 'text' : 'password'"
+              id="password"
+              name="password"
+              placeholder="Enter your password"
+              [(ngModel)]="password"
+              required
+              autocomplete="current-password"
+            />
+            <button
+              type="button"
+              class="toggle-visibility"
+              (click)="togglePassword()"
+              [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
+            >
+              {{ showPassword ? 'Hide' : 'Show' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- <div class="form-meta">
+          <label class="remember-me">
+            <input type="checkbox" name="remember" />
+            <span>Remember me</span>
+          </label>
+          <a href="javascript:void(0)" class="forgot-link">Forgot password?</a>
+        </div> -->
+
+        <button type="submit" class="submit-btn" [disabled]="loginForm.invalid">
+          Get Started
+        </button>
+
+      </form>
+    </div>
+  </div>
+
+</div>

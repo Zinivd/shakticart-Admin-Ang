@@ -1,0 +1,110 @@
+<div class="layout" [class.collapsed]="collapsed">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="sidebar-header">
+              <div class="logo-mark">S</div>
+                <div class="brand-block">
+                    <img src="assets/logo/Logo-DLCKfUMK.webp" alt="ShaktiCart Logo" class="brand-logo" />
+                    <span class="powered-by">Powered by Zinivd</span>
+                </div>
+        </div>
+
+        <!-- <button class="collapse-toggle" (click)="toggleCollapse()"
+            [attr.aria-label]="collapsed ? 'Expand sidebar' : 'Collapse sidebar'">
+            <i class="bx" [ngClass]="collapsed ? 'bx-chevron-right' : 'bx-chevron-left'"></i>
+        </button> -->
+
+        <nav class="sidebar-nav">
+            <ul>
+                <li *ngFor="let item of visibleItems" class="nav-item"
+                    (mouseenter)="collapsed && item.children?.length ? onHoverItem(item.label) : null"
+                    (mouseleave)="collapsed && item.children?.length ? onLeaveItem() : null">
+
+                    <!-- Simple link item (no children) -->
+                    <a
+                    *ngIf="!item.children?.length"
+                    [routerLink]="item.route"
+                    routerLinkActive="active"
+                    class="nav-link"
+                    >
+                    <i [class]="item.icon"></i>
+                    <span class="label" *ngIf="!collapsed">{{ item.label }}</span>
+                    </a>
+
+                    <!-- Parent item (has children) -->
+                    <div *ngIf="item.children?.length" class="nav-link parent" [class.active]="isParentActive(item)"
+                        (click)="toggleSubmenu(item)">
+                        <i [class]="item.icon"></i>
+                        <span class="label" *ngIf="!collapsed">{{ item.label }}</span>
+                        <i *ngIf="!collapsed" class="bx bx-chevron-down chevron" [class.rotated]="item.open"></i>
+                    </div>
+
+                    <!-- Inline submenu (expanded sidebar) -->
+                    <ul *ngIf="!collapsed && item.children?.length && item.open" class="submenu">
+                        <li *ngFor="let child of item.children">
+                            <a [routerLink]="child.route" routerLinkActive="active" class="submenu-link">
+                                <span>{{ child.label }}</span>
+                                <i class="bx bx-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+
+                    <!-- Flyout submenu (collapsed sidebar) -->
+                    <div *ngIf="collapsed && item.children?.length && hoveredItem === item.label" class="flyout">
+                        <div class="flyout-title">{{ item.label }}</div>
+                        <a
+                        *ngFor="let child of item.children"
+                        [routerLink]="child.route"
+                        routerLinkActive="active"
+                        class="flyout-link"
+                        >
+                        <span>{{ child.label }}</span>
+                        <i class="bx bx-chevron-right"></i>
+                        </a>
+                    </div>
+
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- MAIN AREA -->
+    <div class="main-area">
+
+        <header class="topbar">
+            <div class="topbar-left">
+              
+            </div>
+
+            <div class="topbar-right">
+                <div class="profile-wrap">
+                    <button class="avatar-btn" (click)="toggleProfileMenu()">
+                        <img *ngIf="avatarUrl" [src]="avatarUrl" alt="Profile" class="avatar-img" />
+                        <span *ngIf="!avatarUrl" class="avatar-fallback">{{ userInitials }}</span>
+                    </button>
+
+                    <div class="profile-menu" *ngIf="profileMenuOpen">
+                        <button class="profile-menu-item" (click)="goToProfile()">
+                            <i class="bx bx-user"></i>
+                            <span>View Profile</span>
+                        </button>
+                        <button class="profile-menu-item logout" (click)="logout()">
+                          <i class="bx bx-arrow-out-left-square-half"></i>
+                            <span>Logout</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Overlay to close profile menu on outside click -->
+        <div class="menu-backdrop" *ngIf="profileMenuOpen" (click)="closeProfileMenu()"></div>
+
+        <main class="page-content">
+            <router-outlet></router-outlet>
+        </main>
+
+    </div>
+</div>
