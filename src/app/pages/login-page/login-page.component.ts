@@ -1,6 +1,9 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { ApiServicesService } from '../../apiservice/api-services.service';
+import { Router } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-login-page',
@@ -50,7 +53,11 @@ export class LoginPageComponent {
 
   quoteOfTheDay: string = '';
 
-  constructor() {
+  constructor(
+    private apiServices: ApiServicesService,
+    private router: Router,
+    private toastr: ToastrService,
+  ) {
     this.setDailyQuote();
   }
 
@@ -71,9 +78,35 @@ export class LoginPageComponent {
 
   onSubmit(): void {
     if (!this.email || !this.password) {
+      this.toastr.error('Please enter email and password');
       return;
     }
     // Hook your auth/login API call here
     console.log('Login attempt:', { email: this.email, password: this.password });
+
+    const payload = {
+      email: this.email,
+      password: this.password
+    };
+
+    this.apiServices.loginApi(payload).subscribe({
+      next: (res: any) => {
+        if (res.success === true) {
+
+
+          localStorage.setItem("token", res.token);
+          localStorage.setItem("user_type", res.user.user_type);
+          localStorage.setItem("unique_id", res.user.unique_id);
+          localStorage.setItem("email", res.user.email);
+
+          this.router.navigate(['/superadmin/dashboard']);
+          this.toastr.success('Login successful');
+        }
+      },
+      error: (err: any) => {
+        console.log(err);
+        this.toastr.error('Invalid email or password');
+      }
+    });
   }
 }

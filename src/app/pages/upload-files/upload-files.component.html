@@ -1,1 +1,190 @@
-<p>upload-files works!</p>
+<div class="body-head mb-4">
+    <h4 class="mb-0">All Uploaded Files</h4>
+    <button class="list-btn" (click)="openUploadModal()">
+        <i class="fa-solid fa-upload pe-1"></i> Upload New File
+    </button>
+</div>
+
+<div class="form-div">
+    <div class="search-input mb-3">
+        <input type="text" class="form-control" placeholder="Search ..." [(ngModel)]="searchText" />
+    </div>
+
+    <div class="body-head mb-3">
+        <label class="custom-checkbox">
+            <input type="checkbox" [(ngModel)]="selectAll" (change)="toggleSelectAll()" />
+            <span class="checkbox-box"></span>
+            <span>Select All</span>
+        </label>
+        <button class="reset-btn" (click)="bulkDelete()" [disabled]="selectedCount === 0">
+            <i class="fa-solid fa-trash text-danger pe-1"></i>
+            Bulk Delete <span *ngIf="selectedCount > 0">({{ selectedCount }})</span>
+        </button>
+    </div>
+
+    <!-- Loading -->
+    <div class="text-center py-5" *ngIf="loading">
+        <i class="fa-solid fa-spinner fa-spin fa-2x text-muted"></i>
+        <p class="text-muted mt-2">Loading files...</p>
+    </div>
+
+    <!-- File Grid -->
+    <div class="file-grid" *ngIf="!loading && filteredFiles.length > 0; else noFiles">
+        <div class="file-card" *ngFor="let file of filteredFiles">
+            <!-- Checkbox + Three Dots -->
+            <div class="file-card-header">
+                <label class="custom-checkbox">
+                    <input type="checkbox" [(ngModel)]="file.selected" (change)="onFileCheckChange()" />
+                    <span class="checkbox-box"></span>
+                </label>
+                <div class="three-dots-wrap">
+                    <button class="three-dots-btn" (click)="toggleDropdown($event, file.id)">
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </button>
+                    <div class="dropdown-menu-custom" *ngIf="activeDropdownId === file.id">
+                        <a class="dropdown-item-custom" (click)="openFileInfo(file)">
+                            <i class="fa-solid fa-circle-info"></i> Details Info
+                        </a>
+                        <a class="dropdown-item-custom" (click)="downloadFile(file)">
+                            <i class="fa-solid fa-download"></i> Download
+                        </a>
+                        <a class="dropdown-item-custom" (click)="copyLink(file)">
+                            <i class="fa-solid fa-copy"></i> Copy Link
+                        </a>
+                        <a class="dropdown-item-custom text-danger" (click)="deleteFile(file)">
+                            <i class="fa-solid fa-trash"></i> Delete
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview -->
+            <div class="file-preview">
+                <img *ngIf="file.isImage" [src]="file.url" [alt]="file.name" />
+                <div class="file-icon-wrap" *ngIf="!file.isImage">
+                    <i class="fa-solid fa-file-lines"></i>
+                </div>
+            </div>
+
+            <!-- File Name & Size -->
+            <div class="file-meta">
+                <span class="file-name" [title]="file.name">{{ file.name }}</span>
+                <span class="file-size">{{ file.size }}</span>
+            </div>
+        </div>
+    </div>
+
+    <ng-template #noFiles>
+        <div class="text-center py-5" *ngIf="!loading">
+            <i class="fa-solid fa-folder-open fa-3x text-muted mb-3"></i>
+            <p class="text-muted">No files found.</p>
+        </div>
+    </ng-template>
+</div>
+
+<!-- ══════════════ File Info Modal (pure CSS) ══════════════ -->
+<div class="modal-overlay" *ngIf="showFileInfoModal" (click)="closeFileInfo()">
+    <div class="modal-box" style="max-width: 420px;" (click)="$event.stopPropagation()" *ngIf="selectedFileInfo">
+        <div class="modal-header">
+            <h4>File Info</h4>
+            <button type="button" class="btn-close" (click)="closeFileInfo()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="mb-3">
+                <label>File Name</label>
+                <input class="form-control" readonly value="{{ selectedFileInfo.name }}" />
+            </div>
+            <div class="mb-3">
+                <label>File Type</label>
+                <input class="form-control" readonly value="{{ selectedFileInfo.mimeType }}" />
+            </div>
+            <div class="mb-3">
+                <label>File Size</label>
+                <input class="form-control" readonly value="{{ selectedFileInfo.size }}" />
+            </div>
+            <div class="mb-4">
+                <label>Uploaded At</label>
+                <input class="form-control" readonly value="{{ selectedFileInfo.uploadedAt }}" />
+            </div>
+            <button class="reset-btn w-100" (click)="downloadFile(selectedFileInfo)">
+                <i class="fa-solid fa-download pe-1"></i> Download
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════ Upload Modal (pure CSS) ══════════════ -->
+<div class="modal-overlay" *ngIf="showUploadModal" (click)="closeUploadModal()">
+    <div class="modal-box modal-lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h4 class="mb-0">Upload Files</h4>
+            <button type="button" class="btn-close" (click)="closeUploadModal()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <!-- Drop Zone -->
+            <div class="drop-zone" [ngClass]="{ 'drag-over': dragOver }" (dragover)="onDragOver($event)"
+                (dragleave)="onDragLeave()" (drop)="onDrop($event)" (click)="fileInput.click()">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <h6 class="my-2">Drag & drop files here or click to browse</h6>
+                <input #fileInput type="file" multiple hidden (change)="onFileInputChange($event)" />
+            </div>
+
+            <div class="pending-list mt-3" *ngIf="pendingFiles.length > 0">
+                <h6 class="mb-0">Selected Files ({{ pendingFiles.length }})</h6>
+                <div class="pending-item" *ngFor="let pf of pendingFiles; let i = index">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="pending-preview">
+                            <img *ngIf="pf.isImage && pf.preview" [src]="pf.preview" [alt]="pf.name" />
+                            <i *ngIf="!pf.isImage" class="fa-solid fa-file-lines"></i>
+                        </div>
+                        <div class="details-info">
+                            <h6 class="mb-1 text-dark">{{ pf.name }}</h6>
+                            <h6 class="mb-0">{{ pf.size }}</h6>
+                        </div>
+                    </div>
+                    <a (click)="removePending(i)" title="Remove">
+                        <i class="fa-solid fa-trash text-danger"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="list-btn" (click)="uploadFiles()" [disabled]="pendingFiles.length === 0 || uploading">
+                <i class="fa-solid fa-spinner fa-spin pe-1" *ngIf="uploading"></i>
+                <i class="fa-solid fa-upload pe-1" *ngIf="!uploading"></i>
+                {{ uploading ? 'Uploading...' : 'Upload' }}
+                <span *ngIf="pendingFiles.length > 0 && !uploading">({{ pendingFiles.length }})</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════ Delete Confirm Modal (pure CSS) ══════════════ -->
+<div class="modal-overlay" *ngIf="showDeleteConfirmModal" (click)="closeDeleteConfirmModal()">
+    <div class="modal-box" style="max-width: 400px;" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h4 class="mb-0">Confirm Delete</h4>
+            <button type="button" class="btn-close" (click)="closeDeleteConfirmModal()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p class="mb-0" *ngIf="!isBulkDeleteConfirm && fileToDelete">
+                Are you sure you want to delete "<strong>{{ fileToDelete.name }}</strong>"? This action cannot be undone.
+            </p>
+            <p class="mb-0" *ngIf="isBulkDeleteConfirm">
+                Are you sure you want to delete <strong>{{ selectedCount }}</strong> selected file(s)? This action cannot be undone.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button class="reset-btn" (click)="closeDeleteConfirmModal()">Cancel</button>
+            <button class="list-btn bg-danger border-danger" (click)="confirmDelete()">
+                <i class="fa-solid fa-trash pe-1"></i> Delete
+            </button>
+        </div>
+    </div>
+</div>

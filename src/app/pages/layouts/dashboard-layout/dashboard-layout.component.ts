@@ -2,6 +2,7 @@ import { Component, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, RouterOutlet, NavigationEnd } from '@angular/router';
 import { SIDEBAR_ITEMS, SidebarItem } from '../../../shared/sidebar';
+import { ApiServicesService } from '../../../apiservice/api-services.service';
 
 @Component({
   selector: 'app-dashboard-layout',
@@ -19,11 +20,13 @@ export class DashboardLayoutComponent implements OnInit {
   hoveredItem: string | null = null;
   profileMenuOpen = false;
 
-  currentUserRole: string = 'superadmin';
-  userName: string = 'Admin User';
+  currentUserRole: string = 'admin';
+  userName: string = 'Admin';
   avatarUrl: string | null = null;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router,
+    private apiServices: ApiServicesService
+  ) {}
 
   ngOnInit(): void {
     const storedRole = localStorage.getItem('role');
@@ -51,6 +54,11 @@ export class DashboardLayoutComponent implements OnInit {
       }
     });
     this.syncOpenStateWithRoute();
+
+    const storedToken = localStorage.getItem('token');
+    const email = localStorage.getItem('email');
+
+    this.getUserInfo(email);
   }
 
   @HostListener('window:resize', ['$event'])
@@ -139,5 +147,16 @@ export class DashboardLayoutComponent implements OnInit {
     this.closeProfileMenu();
     localStorage.clear();
     this.router.navigate(['/auth/sign-in']);
+  }
+
+  getUserInfo(payload: any): void {
+    this.apiServices.getUserInfo(payload).subscribe({
+      next: (res: any) => {
+        console.log(res);
+      },
+      error: (err: any) => {
+        console.log(err);
+      }
+    });
   }
 }

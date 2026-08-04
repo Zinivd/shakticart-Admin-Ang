@@ -17,7 +17,7 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
         icon: 'bx bx-dashboard',
         activeIcon: 'bx bx-dashboard',
         route: '/superadmin/dashboard',
-        allowedRole: 'superadmin',
+        allowedRole: 'admin',
         keywords: ['home', 'overview', 'analytics', 'stats', 'main']
     },
 
@@ -25,7 +25,7 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
         label: 'Products',
         icon: 'bx bx-cart-alt-2',
         activeIcon: 'bx bx-cart-alt-2',
-        allowedRole: 'superadmin',
+        allowedRole: 'admin',
         avatarLabel: 'PR',
         keywords: ['product', 'catalog', 'inventory'],
         children: [
@@ -35,7 +35,7 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
                 label: 'Categories',
                 icon: 'bx bx-category',
                 route: '/superadmin/products/categories',
-                allowedRole: 'superadmin',
+                allowedRole: 'admin',
                 keywords: ['category', 'product category']
             },
 
@@ -43,7 +43,7 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
                 label: 'Product List',
                 icon: 'bx bx-list-ul',
                 route: '/superadmin/products/list',
-                allowedRole: 'superadmin',
+                allowedRole: 'admin',
                 keywords: ['view products', 'product list']
             },
 
@@ -51,7 +51,7 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
                 label: 'Colors',
                 icon: 'bx bx-palette',
                 route: '/superadmin/products/colors',
-                allowedRole: 'superadmin',
+                allowedRole: 'admin',
                 keywords: ['colors', 'variants']
             },
 
@@ -59,7 +59,7 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
                 label: 'Upload files',
                 icon: 'bx bx-upload',
                 route: '/superadmin/products/upload-files',
-                allowedRole: 'superadmin',
+                allowedRole: 'admin',
                 keywords: ['upload', 'files', 'media']
             },
 
@@ -71,20 +71,20 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
         label: 'Inventory',
         icon: 'bx bx-store-alt-2',
         activeIcon: 'bx bx-store-alt-2',
-        allowedRole: 'superadmin',
+        allowedRole: 'admin',
         keywords: ['inventory', 'stock', 'supplies'],
         children: [
-            {
-                label: 'Manage Stocks',
-                icon: 'bx bx-trending-up',
-                route: '/superadmin/inventory/stocks',
-                allowedRole: 'superadmin'
-            },
+            // {
+            //     label: 'Manage Stocks',
+            //     icon: 'bx bx-trending-up',
+            //     route: '/superadmin/inventory/stocks',
+            //     allowedRole: 'admin'
+            // },
             {
                 label: 'Banners',
                 icon: 'bx bx-undo',
                 route: '/superadmin/inventory/banners',
-                allowedRole: 'superadmin'
+                allowedRole: 'admin'
             },
         ]
     },
@@ -92,20 +92,20 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
         label: 'Orders',
         icon: 'bxf bx-package',
         activeIcon: 'bxf bx-package',
-        allowedRole: 'superadmin',
+        allowedRole: 'admin',
         keywords: ['orders', 'sales', 'transactions'],
         children: [
             {
                 label: 'All Orders',
                 icon: 'bx bx-trending-up',
                 route: '/superadmin/orders/all',
-                allowedRole: 'superadmin'
+                allowedRole: 'admin'
             },
             {
                 label: 'Invoices',
                 icon: 'bx bx-undo',
                 route: '/superadmin/orders/invoices',
-                allowedRole: 'superadmin'
+                allowedRole: 'admin'
             },
         ]
     },
@@ -113,21 +113,21 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
         label: 'Customers',
         icon: 'bx bx-user',
         activeIcon: 'bxf bx-user',
-        allowedRole: 'superadmin',
+        allowedRole: 'admin',
         keywords: ['customers', 'clients', 'users'],
         children: [
             {
                 label: 'All Customers',
                 icon: 'bx bx-megaphone',
                 route: '/superadmin/customers/all',
-                allowedRole: 'superadmin'
+                allowedRole: 'admin'
             },
-            {
-                label: 'Product Reviews',
-                icon: 'bx bx-user-circle',
-                route: '/superadmin/customers/reviews',
-                allowedRole: 'superadmin'
-            },
+            // {
+            //     label: 'Product Reviews',
+            //     icon: 'bx bx-user-circle',
+            //     route: '/superadmin/customers/reviews',
+            //     allowedRole: 'admin'
+            // },
             
         ]
     }

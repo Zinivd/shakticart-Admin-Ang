@@ -1,1 +1,255 @@
-<p>category-list works!</p>
+<div class="page-wrapper">
+    <div class="page-header">
+        <h1 class="page-title">Categories</h1>
+        <button class="btn-add" *ngIf="activeTab === 'category'" (click)="openAddCategoryModal()">
+            <span class="plus">+</span> Add Category
+        </button>
+        <button class="btn-add" *ngIf="activeTab === 'subcategory'" (click)="openAddSubCategoryModal()">
+            <span class="plus">+</span> Add Subcategory
+        </button>
+    </div>
+    <div class="card">
+        <!-- Tabs -->
+        <div class="tabs">
+            <button type="button" class="tab-btn" [class.active]="activeTab === 'category'"
+                (click)="switchTab('category')">
+                Category
+                <span class="tab-count">{{ categories.length }}</span>
+            </button>
+            <button type="button" class="tab-btn" [class.active]="activeTab === 'subcategory'"
+                (click)="switchTab('subcategory')">
+                Sub Category
+                <span class="tab-count">{{ subCategories.length }}</span>
+            </button>
+        </div>
+        <!-- Search -->
+        <div class="search-row">
+            <input type="text" class="search-input" placeholder="Search ..." [(ngModel)]="searchTerm"
+                (ngModelChange)="onSearch()" />
+        </div>
+        <!-- ============ CATEGORY TABLE ============ -->
+        <div class="table-wrapper" *ngIf="activeTab === 'category'">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width:70px;">S.NO</th>
+                        <th>CODE</th>
+                        <th>IMAGE</th>
+                        <th>CATEGORY</th>
+                        <th>SUBCATEGORY</th>
+                        <th class="action-col">ACTION</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngIf="!loading && pagedCategories.length === 0">
+                        <td colspan="6" class="empty-row">No matching records found</td>
+                    </tr>
+                    <tr *ngIf="loading">
+                        <td colspan="6" class="empty-row">Loading...</td>
+                    </tr>
+                    <tr *ngFor="let cat of pagedCategories; let i = index; trackBy: trackByCategory">
+                        <td>{{ (categoryPage - 1) * categoryPageSize + i + 1 }}</td>
+                        <td>{{ cat.category_id }}</td>
+                        <td>
+                            <img [src]="cat.image" [alt]="cat.category_name" class="thumb" />
+                        </td>
+                        <td>{{ cat.category_name }}</td>
+                        <td>
+                            <span class="pill" *ngFor="let sub of cat.subcategories">
+                                {{ sub.sub_category_name }}
+                            </span>
+                            <span class="muted" *ngIf="!cat.subcategories?.length">—</span>
+                        </td>
+                        <td class="action-col">
+                            <button class="icon-btn edit" (click)="editCategory(cat)" title="Edit">✎</button>
+                            <button class="icon-btn delete" (click)="deleteCategory(cat)" title="Delete">🗑</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <!-- ============ SUBCATEGORY TABLE ============ -->
+        <div class="table-wrapper" *ngIf="activeTab === 'subcategory'">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width:70px;">S.NO</th>
+                        <th>CODE</th>
+                        <th>SUBCATEGORY</th>
+                        <th>CATEGORY</th>
+                        <th class="action-col">ACTION</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngIf="pagedSubCategories.length === 0">
+                        <td colspan="5" class="empty-row">No matching records found</td>
+                    </tr>
+                    <tr *ngFor="let sub of pagedSubCategories; let i = index; trackBy: trackBySubCategory">
+                        <td>{{ (subCategoryPage - 1) * subCategoryPageSize + i + 1 }}</td>
+                        <td>{{ sub.sub_category_id }}</td>
+                        <td>{{ sub.sub_category_name }}</td>
+                        <td>{{ getCategoryName(sub.category_id) }}</td>
+                        <td class="action-col">
+                            <button class="icon-btn edit" (click)="editSubCategory(sub)" title="Edit">✎</button>
+                            <button class="icon-btn delete" (click)="deleteSubCategory(sub)" title="Delete">🗑</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <!-- ============ PAGINATION — CATEGORY ============ -->
+        <div class="pagination-bar" *ngIf="activeTab === 'category'">
+            <div class="page-size">
+                <span>Rows per page</span>
+                <select [(ngModel)]="categoryPageSize" (ngModelChange)="onCategoryPageSizeChange()">
+                    <option [ngValue]="5">5</option>
+                    <option [ngValue]="10">10</option>
+                    <option [ngValue]="25">25</option>
+                    <option [ngValue]="50">50</option>
+                </select>
+            </div>
+            <div class="page-info">Page {{ categoryPage }} of {{ categoryTotalPages }}</div>
+            <div class="page-controls">
+                <button class="page-btn" [disabled]="categoryPage === 1" (click)="goToCategoryPage(1)">«</button>
+                <button class="page-btn" [disabled]="categoryPage === 1"
+                    (click)="goToCategoryPage(categoryPage - 1)">Prev</button>
+                <ng-container *ngFor="let p of categoryPageNumbers">
+                    <button *ngIf="p !== '...'" class="page-btn number" [class.active]="p === categoryPage"
+                        (click)="goToCategoryPage(p)">
+                        {{ p }}
+                    </button>
+                    <span *ngIf="p === '...'" class="dots">…</span>
+                </ng-container>
+                <button class="page-btn" [disabled]="categoryPage === categoryTotalPages"
+                    (click)="goToCategoryPage(categoryPage + 1)">Next</button>
+                <button class="page-btn" [disabled]="categoryPage === categoryTotalPages"
+                    (click)="goToCategoryPage(categoryTotalPages)">»</button>
+            </div>
+        </div>
+        <!-- ============ PAGINATION — SUBCATEGORY ============ -->
+        <div class="pagination-bar" *ngIf="activeTab === 'subcategory'">
+            <div class="page-size">
+                <span>Rows per page</span>
+                <select [(ngModel)]="subCategoryPageSize" (ngModelChange)="onSubCategoryPageSizeChange()">
+                    <option [ngValue]="5">5</option>
+                    <option [ngValue]="10">10</option>
+                    <option [ngValue]="25">25</option>
+                    <option [ngValue]="50">50</option>
+                </select>
+            </div>
+            <div class="page-info">Page {{ subCategoryPage }} of {{ subCategoryTotalPages }}</div>
+            <div class="page-controls">
+                <button class="page-btn" [disabled]="subCategoryPage === 1" (click)="goToSubCategoryPage(1)">«</button>
+                <button class="page-btn" [disabled]="subCategoryPage === 1"
+                    (click)="goToSubCategoryPage(subCategoryPage - 1)">Prev</button>
+                <ng-container *ngFor="let p of subCategoryPageNumbers">
+                    <button *ngIf="p !== '...'" class="page-btn number" [class.active]="p === subCategoryPage"
+                        (click)="goToSubCategoryPage(p)">
+                        {{ p }}
+                    </button>
+                    <span *ngIf="p === '...'" class="dots">…</span>
+                </ng-container>
+                <button class="page-btn" [disabled]="subCategoryPage === subCategoryTotalPages"
+                    (click)="goToSubCategoryPage(subCategoryPage + 1)">Next</button>
+                <button class="page-btn" [disabled]="subCategoryPage === subCategoryTotalPages"
+                    (click)="goToSubCategoryPage(subCategoryTotalPages)">»</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- ======================= ADD CATEGORY MODAL ======================== -->
+<!-- ================================================================== -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-hidden="true" #addCategoryModal>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content custom-modal">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert-error" *ngIf="categoryFormError">{{ categoryFormError }}</div>
+
+                <div class="form-group">
+                    <label class="form-label">Category Name</label>
+                    <input type="text" class="form-control" placeholder="e.g. T-Shirt"
+                        [(ngModel)]="newCategoryName" name="newCategoryName" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Category Image</label>
+
+                    <div class="image-upload-box" *ngIf="!newCategoryImagePreview">
+                        <input type="file" id="categoryImageInput" accept="image/*" class="file-input-hidden"
+                            (change)="onCategoryImageSelected($event)" />
+                        <label for="categoryImageInput" class="upload-placeholder">
+                            <span class="upload-icon">⬆</span>
+                            <span>Click to upload image</span>
+                        </label>
+                    </div>
+
+                    <div class="image-preview-box" *ngIf="newCategoryImagePreview">
+                        <img [src]="newCategoryImagePreview" alt="preview" class="preview-img" />
+                        <button type="button" class="remove-img-btn" (click)="removeCategoryImage()">✕</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn-primary" [disabled]="savingCategory"
+                    (click)="submitAddCategory()">
+                    {{ savingCategory ? 'Saving...' : 'Save Category' }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- ===================== ADD SUBCATEGORY MODAL ======================= -->
+<!-- ================================================================== -->
+<div class="modal fade" id="addSubCategoryModal" tabindex="-1" aria-hidden="true" #addSubCategoryModal>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content custom-modal">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Subcategory</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert-error" *ngIf="subCategoryFormError">{{ subCategoryFormError }}</div>
+
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select class="form-control" [(ngModel)]="selectedCategoryId" name="selectedCategoryId">
+                        <option value="" disabled>Select a category</option>
+                        <option *ngFor="let cat of categories" [value]="cat.category_id">
+                            {{ cat.category_name }}
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Subcategory Names</label>
+
+                    <div class="subcat-row" *ngFor="let row of subCategoryRows; let i = index; let last = last">
+                        <input type="text" class="form-control" placeholder="e.g. Stripe T-shirt"
+                            [(ngModel)]="row.sub_category_name" [name]="'subCatRow' + i" />
+
+                        <button type="button" class="row-icon-btn add" *ngIf="last" (click)="addSubCategoryRow()"
+                            title="Add another">+</button>
+                        <button type="button" class="row-icon-btn remove" *ngIf="!last || subCategoryRows.length > 1"
+                            (click)="removeSubCategoryRow(i)" title="Remove">✕</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn-primary" [disabled]="savingSubCategory"
+                    (click)="submitAddSubCategory()">
+                    {{ savingSubCategory ? 'Saving...' : 'Save Subcategories' }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

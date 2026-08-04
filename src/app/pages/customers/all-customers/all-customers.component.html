@@ -1,1 +1,104 @@
-<p>all-customers works!</p>
+<div class="page-wrapper">
+
+  <div class="page-header">
+    <h1 class="page-title">Customer List</h1>
+  </div>
+
+  <div class="card">
+
+    <!-- Search -->
+    <div class="search-row">
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Search Here..."
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="onSearch()" />
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:60px;">#</th>
+            <th>CODE</th>
+            <th>NAME</th>
+            <th>CONTACT NUMBER</th>
+            <th>EMAIL ID</th>
+            <th>TYPE</th>
+            <th class="action-col">ACTION</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="loading">
+            <td colspan="7" class="empty-row">Loading customers...</td>
+          </tr>
+          <tr *ngIf="!loading && pagedCustomers.length === 0">
+            <td colspan="7" class="empty-row">No matching records found</td>
+          </tr>
+          <tr *ngFor="let customer of pagedCustomers; let i = index; trackBy: trackByCustomer">
+            <td>{{ (page - 1) * pageSize + i + 1 }}</td>
+            <td class="code-cell">{{ customer.unique_id }}</td>
+            <td>{{ customer.name }}</td>
+            <td class="phone-cell">{{ formatPhone(customer.phone) }}</td>
+            <td>{{ customer.email }}</td>
+            <td><span [ngClass]="typeClass(customer.user_type)">{{ customer.user_type }}</span></td>
+            <td class="action-col">
+              <button
+                class="icon-btn delete"
+                [disabled]="deletingId === customer.id"
+                (click)="deleteCustomer(customer)"
+                title="Delete customer">
+                <svg *ngIf="deletingId !== customer.id" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 6h18"></path>
+                  <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                </svg>
+                <span *ngIf="deletingId === customer.id" class="mini-spinner"></span>
+              </button>
+              <button class="icon-btn view" (click)="viewCustomer(customer)" title="View customer">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <path d="M15 3h6v6"></path>
+                  <path d="M10 14L21 3"></path>
+                </svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-bar">
+      <div class="page-size">
+        <span>Rows per page</span>
+        <select [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="25">25</option>
+          <option [ngValue]="50">50</option>
+        </select>
+      </div>
+
+      <div class="page-info">Page {{ page }} of {{ totalPages }}</div>
+
+      <div class="page-controls">
+        <button class="page-btn" [disabled]="page === 1" (click)="goToPage(1)">«</button>
+        <button class="page-btn" [disabled]="page === 1" (click)="goToPage(page - 1)">Prev</button>
+
+        <ng-container *ngFor="let p of pageNumbers">
+          <button *ngIf="p !== '...'" class="page-btn number" [class.active]="p === page" (click)="goToPage(p)">
+            {{ p }}
+          </button>
+          <span *ngIf="p === '...'" class="dots">…</span>
+        </ng-container>
+
+        <button class="page-btn" [disabled]="page === totalPages" (click)="goToPage(page + 1)">Next</button>
+        <button class="page-btn" [disabled]="page === totalPages" (click)="goToPage(totalPages)">»</button>
+      </div>
+    </div>
+
+  </div>
+</div>

@@ -1,1 +1,119 @@
-<p>product-list works!</p>
+<div class="page-wrapper">
+    <div class="page-header">
+        <h1 class="page-title">Products</h1>
+        <button class="btn-add" (click)="goToAddProduct()">
+            <span class="plus">+</span> Add Product
+        </button>
+    </div>
+
+    <div class="card">
+        <!-- Search -->
+        <div class="search-row">
+            <input type="text" class="search-input" placeholder="Search ..." [(ngModel)]="searchTerm"
+                (ngModelChange)="onSearch()" />
+            <span class="result-count">{{ filteredProducts.length }} products</span>
+        </div>
+
+        <!-- ============ PRODUCT TABLE ============ -->
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width:60px;">S.NO</th>
+                        <th>IMAGE</th>
+                        <th>PRODUCT</th>
+                        <th>BRAND</th>
+                        <th>CATEGORY</th>
+                        <th>SUB CATEGORY</th>
+                        <th>COLORS</th>
+                        <th>SIZES</th>
+                        <th>QTY</th>
+                        <th>PRICE</th>
+                        <th>TYPE</th>
+                        <th>STATUS</th>
+                        <th class="action-col">ACTION</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngIf="loading">
+                        <td colspan="13" class="empty-row">Loading...</td>
+                    </tr>
+                    <tr *ngIf="!loading && pagedProducts.length === 0">
+                        <td colspan="13" class="empty-row">No matching records found</td>
+                    </tr>
+                    <tr *ngFor="let prod of pagedProducts; let i = index; trackBy: trackByProduct">
+                        <td>{{ (page - 1) * pageSize + i + 1 }}</td>
+                        <td>
+                            <img [src]="getThumbnail(prod)" [alt]="prod.name" class="thumb" />
+                        </td>
+                        <td>
+                            <div class="prod-name">{{ prod.name }}</div>
+                            <div class="prod-desc" *ngIf="prod.description">{{ prod.description }}</div>
+                        </td>
+                        <td>{{ prod.brand || '—' }}</td>
+                        <td>{{ prod.category.category_name || '—' }}</td>
+                        <td>{{ prod.subcategory.sub_category_name || '—' }}</td>
+                        <td>
+                            <span class="color-pill" *ngFor="let c of getColorNames(prod)">
+                                <span class="color-dot" [style.background]="c.code"></span>
+                                {{ c.name }}
+                            </span>
+                            <span class="muted" *ngIf="getColorNames(prod).length === 0">—</span>
+                        </td>
+                        <td>{{ getAllSizes(prod) }}</td>
+                        <td>{{ getTotalQuantity(prod) }}</td>
+                        <td>
+                            <div class="price-block">
+                                <span class="selling-price">₹{{ prod.selling_price }}</span>
+                                <span class="actual-price" *ngIf="+prod.discount_percent > 0">₹{{ prod.actual_price }}</span>
+                                <span class="discount-tag" *ngIf="+prod.discount_percent > 0">{{ prod.discount_percent }}% off</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="type-tag" [ngClass]="listTypeClass(prod.product_list_type)">
+                                {{ listTypeLabel(prod.product_list_type) }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="status-pill" [ngClass]="publishedClass(prod.is_published)">
+                                {{ prod.is_published ? 'Published' : 'Draft' }}
+                            </span>
+                        </td>
+                        <td class="action-col">
+                            <button class="icon-btn view" (click)="viewProduct(prod)" title="View">👁</button>
+                            <button class="icon-btn edit" (click)="editProduct(prod)" title="Edit">✎</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ============ PAGINATION (client-side) ============ -->
+        <div class="pagination-bar">
+            <div class="page-size">
+                <span>Rows per page</span>
+                <select [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+                    <option [ngValue]="5">5</option>
+                    <option [ngValue]="10">10</option>
+                    <option [ngValue]="25">25</option>
+                    <option [ngValue]="50">50</option>
+                </select>
+            </div>
+            <div class="page-info">Page {{ page }} of {{ totalPages }}</div>
+            <div class="page-controls">
+                <button class="page-btn" [disabled]="page === 1" (click)="goToPage(1)">«</button>
+                <button class="page-btn" [disabled]="page === 1" (click)="goToPage(page - 1)">Prev</button>
+                <ng-container *ngFor="let p of pageNumbers">
+                    <button *ngIf="p !== '...'" class="page-btn number" [class.active]="p === page"
+                        (click)="goToPage(p)">
+                        {{ p }}
+                    </button>
+                    <span *ngIf="p === '...'" class="dots">…</span>
+                </ng-container>
+                <button class="page-btn" [disabled]="page === totalPages" (click)="goToPage(page + 1)">Next</button>
+                <button class="page-btn" [disabled]="page === totalPages"
+                    (click)="goToPage(totalPages)">»</button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,1 +1,67 @@
-<p>color-add works!</p>
+<div class="color-add-wrapper">
+
+  <div class="page-header">
+    <h2 class="page-title">Add Color</h2>
+  </div>
+
+  <div class="form-card">
+
+    <div class="rows-container">
+      <div class="row-labels">
+        <span class="col-label">Name</span>
+        <span class="col-label">Code</span>
+      </div>
+
+      <div class="color-row" *ngFor="let row of colorRows; let i = index; let last = last">
+        <input
+          type="text"
+          class="row-input"
+          placeholder="Name"
+          [(ngModel)]="row.name"
+          name="name{{ i }}" />
+
+        <input
+          type="text"
+          class="row-input"
+          placeholder="Code"
+          [(ngModel)]="row.code"
+          name="code{{ i }}" />
+
+        <span
+          class="color-preview"
+          [style.background]="row.code || '#f3f4f6'"
+          [class.empty]="!row.code">
+        </span>
+
+        <button
+          type="button"
+          class="btn-remove"
+          *ngIf="colorRows.length > 1"
+          (click)="removeColorRow(i)"
+          title="Remove row">
+          &times;
+        </button>
+
+        <button
+          type="button"
+          class="btn-icon"
+          *ngIf="last"
+          (click)="addColorRow()"
+          title="Add another color">
+          +
+        </button>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn-cancel" (click)="goBack()" [disabled]="isSaving">
+        Cancel
+      </button>
+      <button type="button" class="btn-save" (click)="saveColor()" [disabled]="isSaving">
+        <span *ngIf="isSaving" class="btn-spinner"></span>
+        {{ isSaving ? 'Saving...' : 'Save' }}
+      </button>
+    </div>
+
+  </div>
+</div>
