@@ -242,11 +242,11 @@ export class ProductListComponent implements OnInit {
   }
 
   viewProduct(item: Product): void {
-    this.router.navigate(['/superadmin/products/view', item.id]);
+    this.router.navigate(['/superadmin/products/list/view-product/', item.id]);
   }
 
   editProduct(item: Product): void {
-    this.router.navigate(['/superadmin/products/edit', item.id]);
+    this.router.navigate(['/superadmin/products/list/update-product/', item.id]);
   }
 
   goToAddProduct(): void {

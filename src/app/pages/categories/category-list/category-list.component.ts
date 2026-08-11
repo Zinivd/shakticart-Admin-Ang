@@ -13,7 +13,6 @@ interface SubCategory {
   created_at: string;
   updated_at: string;
 }
-
 interface Category {
   id: number;
   category_id: string;
@@ -23,10 +22,9 @@ interface Category {
   updated_at: string;
   subcategories: SubCategory[];
 }
-
 type TabKey = 'category' | 'subcategory';
 
-// row model for the dynamic subcategory-name inputs in the modal
+// row model for the dynamic subcategory-name inputs in the Add modal
 interface SubCategoryRow {
   sub_category_name: string;
 }
@@ -48,7 +46,6 @@ export class CategoryListComponent implements OnInit {
   // filtered (search applied) data
   filteredCategories: Category[] = [];
   filteredSubCategories: SubCategory[] = [];
-
   searchTerm = '';
   loading = false;
 
@@ -77,6 +74,25 @@ export class CategoryListComponent implements OnInit {
   subCategoryFormError = '';
   private addSubCategoryModalInstance: any;
 
+  // ---------------- Edit Category modal state ----------------
+  @ViewChild('editCategoryModal') editCategoryModalRef!: ElementRef;
+  editCategoryId = '';         // category_id (e.g. CTGRY1) — sent back to API
+  editCategoryName = '';
+  editCategoryImageFile: File | null = null;   // only set if user picks a NEW image
+  editCategoryImagePreview: string | null = null; // shows existing image or new preview
+  updatingCategory = false;
+  editCategoryFormError = '';
+  private editCategoryModalInstance: any;
+
+  // ---------------- Edit Subcategory modal state ----------------
+  @ViewChild('editSubCategoryModal') editSubCategoryModalRef!: ElementRef;
+  editSubCategoryId = '';        // sub_category_id (e.g. SUBCTGRY2)
+  editSubCategoryParentId = '';  // category_id this subcategory belongs to
+  editSubCategoryName = '';
+  updatingSubCategory = false;
+  editSubCategoryFormError = '';
+  private editSubCategoryModalInstance: any;
+
   constructor(private apiServices: ApiServicesService) { }
 
   ngOnInit(): void {
@@ -90,7 +106,7 @@ export class CategoryListComponent implements OnInit {
     this.apiServices.getAllCategories().subscribe({
       next: (res: any) => {
         this.categories = res?.data ?? [];
-        this.filteredCategories = [...this.categories];
+        this.applyFilter();
         this.loading = false;
       },
       error: (err: any) => {
@@ -104,7 +120,7 @@ export class CategoryListComponent implements OnInit {
     this.apiServices.getAllSubCategories().subscribe({
       next: (res: any) => {
         this.subCategories = res?.data ?? [];
-        this.filteredSubCategories = [...this.subCategories];
+        this.applyFilter();
       },
       error: (err: any) => {
         console.log(err);
@@ -217,21 +233,17 @@ export class CategoryListComponent implements OnInit {
     return withDots;
   }
 
-  // ---------------- Row identity / actions ----------------
+  // ---------------- Row identity ----------------
   trackByCategory(index: number, item: Category): number {
     return item.id;
   }
   trackBySubCategory(index: number, item: SubCategory): number {
     return item.id;
   }
-  editCategory(item: Category): void {
-    console.log('Edit category', item);
-  }
+
+  // ---------------- Delete stubs (unchanged — not part of this request) ----------------
   deleteCategory(item: Category): void {
     console.log('Delete category', item);
-  }
-  editSubCategory(item: SubCategory): void {
-    console.log('Edit subcategory', item);
   }
   deleteSubCategory(item: SubCategory): void {
     console.log('Delete subcategory', item);
@@ -240,43 +252,34 @@ export class CategoryListComponent implements OnInit {
   // =====================================================================
   // ============== ADD CATEGORY MODAL (formdata: name + image) ==========
   // =====================================================================
-
   openAddCategoryModal(): void {
     this.newCategoryName = '';
     this.newCategoryImageFile = null;
     this.newCategoryImagePreview = null;
     this.categoryFormError = '';
     this.savingCategory = false;
-
     if (!this.addCategoryModalInstance) {
       this.addCategoryModalInstance = new bootstrap.Modal(this.addCategoryModalRef.nativeElement);
     }
     this.addCategoryModalInstance.show();
   }
-
   onCategoryImageSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files && input.files.length ? input.files[0] : null;
     if (!file) return;
-
     this.newCategoryImageFile = file;
-
-    // preview
     const reader = new FileReader();
     reader.onload = () => {
       this.newCategoryImagePreview = reader.result as string;
     };
     reader.readAsDataURL(file);
   }
-
   removeCategoryImage(): void {
     this.newCategoryImageFile = null;
     this.newCategoryImagePreview = null;
   }
-
   submitAddCategory(): void {
     this.categoryFormError = '';
-
     if (!this.newCategoryName.trim()) {
       this.categoryFormError = 'Category name is required.';
       return;
@@ -285,7 +288,6 @@ export class CategoryListComponent implements OnInit {
       this.categoryFormError = 'Category image is required.';
       return;
     }
-
     const formData = new FormData();
     formData.append('category_name', this.newCategoryName.trim());
     formData.append('image', this.newCategoryImageFile);
@@ -308,50 +310,40 @@ export class CategoryListComponent implements OnInit {
   // =====================================================================
   // ========== ADD SUBCATEGORY MODAL (category + dynamic rows) ==========
   // =====================================================================
-
   openAddSubCategoryModal(): void {
     this.selectedCategoryId = '';
     this.subCategoryRows = [{ sub_category_name: '' }];
     this.subCategoryFormError = '';
     this.savingSubCategory = false;
-
     if (!this.addSubCategoryModalInstance) {
       this.addSubCategoryModalInstance = new bootstrap.Modal(this.addSubCategoryModalRef.nativeElement);
     }
     this.addSubCategoryModalInstance.show();
   }
-
   addSubCategoryRow(): void {
     this.subCategoryRows.push({ sub_category_name: '' });
   }
-
   removeSubCategoryRow(index: number): void {
-    if (this.subCategoryRows.length === 1) return; // always keep at least one row
+    if (this.subCategoryRows.length === 1) return;
     this.subCategoryRows.splice(index, 1);
   }
-
   submitAddSubCategory(): void {
     this.subCategoryFormError = '';
-
     if (!this.selectedCategoryId) {
       this.subCategoryFormError = 'Please select a category.';
       return;
     }
-
     const cleanedRows = this.subCategoryRows
       .map(r => ({ sub_category_name: r.sub_category_name.trim() }))
       .filter(r => r.sub_category_name.length > 0);
-
     if (cleanedRows.length === 0) {
       this.subCategoryFormError = 'Add at least one subcategory name.';
       return;
     }
-
     const payload = {
       category_id: this.selectedCategoryId,
       subcategories: cleanedRows
     };
-
     this.savingSubCategory = true;
     this.apiServices.addsubcategory(payload).subscribe({
       next: (res: any) => {
@@ -364,6 +356,121 @@ export class CategoryListComponent implements OnInit {
         console.log(err);
         this.savingSubCategory = false;
         this.subCategoryFormError = err?.error?.message || 'Failed to add subcategories. Please try again.';
+      }
+    });
+  }
+
+  // =====================================================================
+  // ============== EDIT CATEGORY MODAL (formdata: id + name + image) ====
+  // =====================================================================
+  editCategory(item: Category): void {
+    this.editCategoryId = item.category_id;
+    this.editCategoryName = item.category_name;
+    this.editCategoryImageFile = null;
+    this.editCategoryImagePreview = item.image || null; // show current image
+    this.editCategoryFormError = '';
+    this.updatingCategory = false;
+
+    if (!this.editCategoryModalInstance) {
+      this.editCategoryModalInstance = new bootstrap.Modal(this.editCategoryModalRef.nativeElement);
+    }
+    this.editCategoryModalInstance.show();
+  }
+
+  onEditCategoryImageSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files && input.files.length ? input.files[0] : null;
+    if (!file) return;
+    this.editCategoryImageFile = file;
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.editCategoryImagePreview = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  removeEditCategoryImage(): void {
+    this.editCategoryImageFile = null;
+    this.editCategoryImagePreview = null;
+  }
+
+  submitEditCategory(): void {
+    this.editCategoryFormError = '';
+    if (!this.editCategoryName.trim()) {
+      this.editCategoryFormError = 'Category name is required.';
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('category_id', this.editCategoryId);
+    formData.append('category_name', this.editCategoryName.trim());
+    // Only attach the image if the user picked a NEW file.
+    // If unchanged, we don't send it — backend should keep the existing image.
+    if (this.editCategoryImageFile) {
+      formData.append('image', this.editCategoryImageFile);
+    }
+
+    this.updatingCategory = true;
+    this.apiServices.UpdateCategory(formData).subscribe({
+      next: (res: any) => {
+        this.updatingCategory = false;
+        this.editCategoryModalInstance?.hide();
+        this.getAllCategories();
+      },
+      error: (err: any) => {
+        console.log(err);
+        this.updatingCategory = false;
+        this.editCategoryFormError = err?.error?.message || 'Failed to update category. Please try again.';
+      }
+    });
+  }
+
+  // =====================================================================
+  // ============ EDIT SUBCATEGORY MODAL (payload: id + name) ============
+  // =====================================================================
+  editSubCategory(item: SubCategory): void {
+    this.editSubCategoryId = item.sub_category_id;
+    this.editSubCategoryParentId = item.category_id;
+    this.editSubCategoryName = item.sub_category_name;
+    this.editSubCategoryFormError = '';
+    this.updatingSubCategory = false;
+
+    if (!this.editSubCategoryModalInstance) {
+      this.editSubCategoryModalInstance = new bootstrap.Modal(this.editSubCategoryModalRef.nativeElement);
+    }
+    this.editSubCategoryModalInstance.show();
+  }
+
+  submitEditSubCategory(): void {
+    this.editSubCategoryFormError = '';
+    if (!this.editSubCategoryName.trim()) {
+      this.editSubCategoryFormError = 'Subcategory name is required.';
+      return;
+    }
+
+    // API expects an array under the parent category_id, even for a single edit
+    const payload = {
+      category_id: this.editSubCategoryParentId,
+      subcategories: [
+        {
+          sub_category_id: this.editSubCategoryId,
+          sub_category_name: this.editSubCategoryName.trim()
+        }
+      ]
+    };
+
+    this.updatingSubCategory = true;
+    this.apiServices.UpdateSubCategory(payload).subscribe({
+      next: (res: any) => {
+        this.updatingSubCategory = false;
+        this.editSubCategoryModalInstance?.hide();
+        this.getAllCategories();
+        this.getAllSubCategories();
+      },
+      error: (err: any) => {
+        console.log(err);
+        this.updatingSubCategory = false;
+        this.editSubCategoryFormError = err?.error?.message || 'Failed to update subcategory. Please try again.';
       }
     });
   }

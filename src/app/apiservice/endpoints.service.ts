@@ -21,6 +21,8 @@ export class EndpointsService {
   public getAllSubCategories = 'subcategories'
   public addcategory = 'category/create'
   public addsubcategory = 'subcategory/create'
+  public UpdateCategory = 'category/update'
+  public UpdateSubCategory = 'subcategories/update'
 
   // colors
   public getAllColors = 'colors'
@@ -54,6 +56,7 @@ export class EndpointsService {
   public getAllBanners = 'admin/banners'
   public publishBanners = 'admin/banners'
 
-  
+    // inventory / stock  ✅ NEW
+  public stockBase = 'admin/shakti-products'
 
 }

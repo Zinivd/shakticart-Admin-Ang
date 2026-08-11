@@ -14,6 +14,8 @@ import { AllCustomersComponent } from './pages/customers/all-customers/all-custo
 import { ProductReviewComponent } from './pages/customers/product-review/product-review.component';
 import { ColorAddComponent } from './pages/colors/color-add/color-add.component';
 import { ProductAddComponent } from './pages/products/product-add/product-add.component';
+import { ProductViewComponent } from './pages/products/product-view/product-view.component';
+import { ProductUpdateComponent } from './pages/products/product-update/product-update.component';
 
 export const routes: Routes = [
 
@@ -48,6 +50,14 @@ export const routes: Routes = [
             {
                 path: 'products/list/add',
                 component: ProductAddComponent,
+            },
+            {
+                path: 'products/list/view-product/:id',
+                component: ProductViewComponent,
+            },
+            {
+                path: 'products/list/update-product/:id',
+                component: ProductUpdateComponent
             },
             {
                 path: 'products/colors',

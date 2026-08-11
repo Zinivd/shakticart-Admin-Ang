@@ -74,12 +74,12 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
         allowedRole: 'admin',
         keywords: ['inventory', 'stock', 'supplies'],
         children: [
-            // {
-            //     label: 'Manage Stocks',
-            //     icon: 'bx bx-trending-up',
-            //     route: '/superadmin/inventory/stocks',
-            //     allowedRole: 'admin'
-            // },
+            {
+                label: 'Manage Stocks',
+                icon: 'bx bx-trending-up',
+                route: '/superadmin/inventory/stocks',
+                allowedRole: 'admin'
+            },
             {
                 label: 'Banners',
                 icon: 'bx bx-undo',
@@ -101,12 +101,12 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
                 route: '/superadmin/orders/all',
                 allowedRole: 'admin'
             },
-            {
-                label: 'Invoices',
-                icon: 'bx bx-undo',
-                route: '/superadmin/orders/invoices',
-                allowedRole: 'admin'
-            },
+            // {
+            //     label: 'Invoices',
+            //     icon: 'bx bx-undo',
+            //     route: '/superadmin/orders/invoices',
+            //     allowedRole: 'admin'
+            // },
         ]
     },
     {

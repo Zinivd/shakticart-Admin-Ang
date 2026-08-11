@@ -62,7 +62,7 @@
                         </td>
                         <td class="action-col">
                             <button class="icon-btn edit" (click)="editCategory(cat)" title="Edit">✎</button>
-                            <button class="icon-btn delete" (click)="deleteCategory(cat)" title="Delete">🗑</button>
+                            <!-- <button class="icon-btn delete" (click)="deleteCategory(cat)" title="Delete">🗑</button> -->
                         </td>
                     </tr>
                 </tbody>
@@ -91,7 +91,7 @@
                         <td>{{ getCategoryName(sub.category_id) }}</td>
                         <td class="action-col">
                             <button class="icon-btn edit" (click)="editSubCategory(sub)" title="Edit">✎</button>
-                            <button class="icon-btn delete" (click)="deleteSubCategory(sub)" title="Delete">🗑</button>
+                            <!-- <button class="icon-btn delete" (click)="deleteSubCategory(sub)" title="Delete">🗑</button> -->
                         </td>
                     </tr>
                 </tbody>
@@ -170,16 +170,13 @@
             </div>
             <div class="modal-body">
                 <div class="alert-error" *ngIf="categoryFormError">{{ categoryFormError }}</div>
-
                 <div class="form-group">
                     <label class="form-label">Category Name</label>
                     <input type="text" class="form-control" placeholder="e.g. T-Shirt"
                         [(ngModel)]="newCategoryName" name="newCategoryName" />
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">Category Image</label>
-
                     <div class="image-upload-box" *ngIf="!newCategoryImagePreview">
                         <input type="file" id="categoryImageInput" accept="image/*" class="file-input-hidden"
                             (change)="onCategoryImageSelected($event)" />
@@ -188,7 +185,6 @@
                             <span>Click to upload image</span>
                         </label>
                     </div>
-
                     <div class="image-preview-box" *ngIf="newCategoryImagePreview">
                         <img [src]="newCategoryImagePreview" alt="preview" class="preview-img" />
                         <button type="button" class="remove-img-btn" (click)="removeCategoryImage()">✕</button>
@@ -218,7 +214,6 @@
             </div>
             <div class="modal-body">
                 <div class="alert-error" *ngIf="subCategoryFormError">{{ subCategoryFormError }}</div>
-
                 <div class="form-group">
                     <label class="form-label">Category</label>
                     <select class="form-control" [(ngModel)]="selectedCategoryId" name="selectedCategoryId">
@@ -228,14 +223,11 @@
                         </option>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">Subcategory Names</label>
-
                     <div class="subcat-row" *ngFor="let row of subCategoryRows; let i = index; let last = last">
                         <input type="text" class="form-control" placeholder="e.g. Stripe T-shirt"
                             [(ngModel)]="row.sub_category_name" [name]="'subCatRow' + i" />
-
                         <button type="button" class="row-icon-btn add" *ngIf="last" (click)="addSubCategoryRow()"
                             title="Add another">+</button>
                         <button type="button" class="row-icon-btn remove" *ngIf="!last || subCategoryRows.length > 1"
@@ -248,6 +240,100 @@
                 <button type="button" class="btn-primary" [disabled]="savingSubCategory"
                     (click)="submitAddSubCategory()">
                     {{ savingSubCategory ? 'Saving...' : 'Save Subcategories' }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- ======================= EDIT CATEGORY MODAL ======================= -->
+<!-- ================================================================== -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1" aria-hidden="true" #editCategoryModal>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content custom-modal">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert-error" *ngIf="editCategoryFormError">{{ editCategoryFormError }}</div>
+
+                <div class="form-group">
+                    <label class="form-label">Category Code</label>
+                    <input type="text" class="form-control" [value]="editCategoryId" disabled />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Category Name</label>
+                    <input type="text" class="form-control" placeholder="e.g. T-Shirt"
+                        [(ngModel)]="editCategoryName" name="editCategoryName" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Category Image</label>
+                    <div class="image-upload-box" *ngIf="!editCategoryImagePreview">
+                        <input type="file" id="editCategoryImageInput" accept="image/*" class="file-input-hidden"
+                            (change)="onEditCategoryImageSelected($event)" />
+                        <label for="editCategoryImageInput" class="upload-placeholder">
+                            <span class="upload-icon">⬆</span>
+                            <span>Click to upload new image</span>
+                        </label>
+                    </div>
+                    <div class="image-preview-box" *ngIf="editCategoryImagePreview">
+                        <img [src]="editCategoryImagePreview" alt="preview" class="preview-img" />
+                        <button type="button" class="remove-img-btn" (click)="removeEditCategoryImage()">✕</button>
+                        <label for="editCategoryImageInputReplace" class="replace-img-link">Change image</label>
+                        <input type="file" id="editCategoryImageInputReplace" accept="image/*"
+                            class="file-input-hidden" (change)="onEditCategoryImageSelected($event)" />
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn-primary" [disabled]="updatingCategory"
+                    (click)="submitEditCategory()">
+                    {{ updatingCategory ? 'Updating...' : 'Update Category' }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- ===================== EDIT SUBCATEGORY MODAL ======================= -->
+<!-- ================================================================== -->
+<div class="modal fade" id="editSubCategoryModal" tabindex="-1" aria-hidden="true" #editSubCategoryModal>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content custom-modal">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Subcategory</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert-error" *ngIf="editSubCategoryFormError">{{ editSubCategoryFormError }}</div>
+
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <input type="text" class="form-control" [value]="getCategoryName(editSubCategoryParentId)" disabled />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Subcategory Code</label>
+                    <input type="text" class="form-control" [value]="editSubCategoryId" disabled />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Subcategory Name</label>
+                    <input type="text" class="form-control" placeholder="e.g. Stripe T-shirt"
+                        [(ngModel)]="editSubCategoryName" name="editSubCategoryName" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn-primary" [disabled]="updatingSubCategory"
+                    (click)="submitEditSubCategory()">
+                    {{ updatingSubCategory ? 'Updating...' : 'Update Subcategory' }}
                 </button>
             </div>
         </div>

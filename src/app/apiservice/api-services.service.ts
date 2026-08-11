@@ -321,6 +321,39 @@ export class ApiServicesService {
       );
   }
 
+  
+
+
+  public UpdateSubCategory<T>(payload: any): Observable<T> {
+    // ✅ Use the instance envUrl, not the class
+    const serviceURL = `${this.urlHelper.getAPIURL()}${this.envUrl.UpdateSubCategory}`;
+
+    return this.http
+      .post<T>(serviceURL, payload, { headers: this.getHeaders() })
+      .pipe(
+        catchError((error) => {
+          // 🔥 1. Handle 403 Unauthorized -> logout & redirect
+          if (error.status === 403) {
+            sessionStorage.clear();
+            localStorage.clear();
+            this.router.navigate(['/auth/sign-in']);
+          }
+          if (
+            error.error.success === false &&
+            error.error.message == 'Session expired'
+          ) {
+            this.router.navigate(['/auth/sign-in']);
+          }
+          //console.error('Login API error', error);
+          return throwError(() => ({
+            statusCode: 500,
+            message: 'Login API error',
+            error,
+          }));
+        })
+      );
+  }
+
 
   
 
@@ -476,6 +509,38 @@ export class ApiServicesService {
   }
 
 
+
+  public UpdateCategory<T>(formdata: FormData): Observable<T> {
+    // ✅ Use the instance envUrl, not the class
+    const serviceURL = `${this.urlHelper.getAPIURL()}${this.envUrl.UpdateCategory}`;
+
+    return this.http
+      .post<T>(serviceURL, formdata, { headers: this.getHeadersforFormdata() })
+      .pipe(
+        catchError((error) => {
+          // 🔥 1. Handle 403 Unauthorized -> logout & redirect
+          if (error.status === 403) {
+            sessionStorage.clear();
+            localStorage.clear();
+            this.router.navigate(['/auth/sign-in']);
+          }
+          if (
+            error.error.success === false &&
+            error.error.message == 'Session expired'
+          ) {
+            this.router.navigate(['/auth/sign-in']);
+          }
+          //console.error('Login API error', error);
+          return throwError(() => ({
+            statusCode: 500,
+            message: 'Login API error',
+            error,
+          }));
+        })
+      );
+  }
+
+
   
 
   public getimagegetAll<T>(): Observable<T> {
@@ -572,11 +637,77 @@ export class ApiServicesService {
   }
 
 
+  
+
+  public getAllProductsbyid<T>(id: any): Observable<T> {
+    const serviceURL = `${this.urlHelper.getAPIURL()}${this.envUrl.getAllProducts
+      }/${id}`;
+
+    return this.http.get<T>(serviceURL, { headers: this.getHeaders() }).pipe(
+      catchError((error) => {
+        // 🔥 1. Handle 403 Unauthorized -> logout & redirect
+        if (error.status === 403) {
+          sessionStorage.clear();
+          localStorage.clear();
+          this.router.navigate(['/auth/sign-in']);
+        }
+        if (
+          error.error.success === false &&
+          error.error.message == 'Session expired'
+        ) {
+          this.router.navigate(['/auth/sign-in']);
+        }
+
+        //console.error('Get Associations API error', error.error.success);
+        return throwError(() => ({
+          statusCode: 500,
+          message: 'Get Associations API error',
+          error,
+        }));
+      })
+    );
+  }
+
+
 
 
   public AddProduct<T>(payload: any): Observable<T> {
     // ✅ Use the instance envUrl, not the class
     const serviceURL = `${this.urlHelper.getAPIURL()}${this.envUrl.AddProduct}`;
+
+    return this.http
+      .post<T>(serviceURL, payload, { headers: this.getHeaders() })
+      .pipe(
+        catchError((error) => {
+          // 🔥 1. Handle 403 Unauthorized -> logout & redirect
+          if (error.status === 403) {
+            sessionStorage.clear();
+            localStorage.clear();
+            this.router.navigate(['/auth/sign-in']);
+          }
+          if (
+            error.error.success === false &&
+            error.error.message == 'Session expired'
+          ) {
+            this.router.navigate(['/auth/sign-in']);
+          }
+          //console.error('Login API error', error);
+          return throwError(() => ({
+            statusCode: 500,
+            message: 'Login API error',
+            error,
+          }));
+        })
+      );
+  }
+
+
+
+
+
+  public updateProduct<T>(prd_id: any, payload: any): Observable<T> {
+    // ✅ Use the instance envUrl, not the class
+    const serviceURL = `${this.urlHelper.getAPIURL()}${this.envUrl.AddProduct}/${prd_id}`;
 
     return this.http
       .post<T>(serviceURL, payload, { headers: this.getHeaders() })
@@ -689,6 +820,58 @@ export class ApiServicesService {
         }
 
         //console.error('Get Associations API error', error.error.success);
+        return throwError(() => ({
+          statusCode: 500,
+          message: 'Get Associations API error',
+          error,
+        }));
+      })
+    );
+  }
+
+
+  public updateStock<T>(productId: any, colorId: any, inventoryId: any, payload: { stock: number }): Observable<T> {
+    const serviceURL = `${this.urlHelper.getAPIURL()}${this.envUrl.stockBase}/${productId}/colors/${colorId}/inventory/${inventoryId}/stock`;
+    return this.http
+      .patch<T>(serviceURL, payload, { headers: this.getHeaders() })
+      .pipe(
+        catchError((error) => {
+          if (error.status === 403) {
+            sessionStorage.clear();
+            localStorage.clear();
+            this.router.navigate(['/auth/sign-in']);
+          }
+          if (
+            error.error.success === false &&
+            error.error.message == 'Session expired'
+          ) {
+            this.router.navigate(['/auth/sign-in']);
+          }
+          return throwError(() => ({
+            statusCode: 500,
+            message: 'Login API error',
+            error,
+          }));
+        })
+      );
+  }
+
+
+  public getAllProductspage<T>(page?: number): Observable<T> {
+    const serviceURL = `${this.urlHelper.getAPIURL()}${this.envUrl.getAllProducts}${page ? '?page=' + page : ''}`;
+    return this.http.get<T>(serviceURL, { headers: this.getHeaders() }).pipe(
+      catchError((error) => {
+        if (error.status === 403) {
+          sessionStorage.clear();
+          localStorage.clear();
+          this.router.navigate(['/auth/sign-in']);
+        }
+        if (
+          error.error.success === false &&
+          error.error.message == 'Session expired'
+        ) {
+          this.router.navigate(['/auth/sign-in']);
+        }
         return throwError(() => ({
           statusCode: 500,
           message: 'Get Associations API error',

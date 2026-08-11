@@ -1,1 +1,223 @@
-<p>stock-manage works!</p>
+<div class="page-wrapper">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Stock Management</h1>
+      <p class="page-subtitle">Monitor and update inventory across all products, colors, and sizes.</p>
+    </div>
+    <button class="btn-refresh" (click)="loadAllInventory()" [disabled]="loading">
+      {{ loading ? 'Refreshing...' : '↻ Refresh' }}
+    </button>
+  </div>
+
+  <!-- Summary cards -->
+  <div class="summary-row">
+    <div class="summary-card">
+      <span class="summary-label">Total Units</span>
+      <span class="summary-value">{{ totalUnits }}</span>
+    </div>
+    <div class="summary-card">
+      <span class="summary-label">SKUs Tracked</span>
+      <span class="summary-value">{{ allRows.length }}</span>
+    </div>
+    <div class="summary-card warn">
+      <span class="summary-label">Low Stock</span>
+      <span class="summary-value">{{ lowStockCount }}</span>
+    </div>
+    <div class="summary-card danger">
+      <span class="summary-label">Out of Stock</span>
+      <span class="summary-value">{{ outOfStockCount }}</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <input type="text" class="search-input" placeholder="Search by product, SKU, brand, or color..."
+        [(ngModel)]="searchTerm" (ngModelChange)="onSearch()" />
+
+      <div class="filter-chips">
+        <button class="chip" [class.active]="stockFilter === 'all'" (click)="setStockFilter('all')">
+          All
+        </button>
+        <button class="chip" [class.active]="stockFilter === 'in_stock'" (click)="setStockFilter('in_stock')">
+          In Stock
+        </button>
+        <button class="chip warn" [class.active]="stockFilter === 'low_stock'" (click)="setStockFilter('low_stock')">
+          Low Stock
+        </button>
+        <button class="chip danger" [class.active]="stockFilter === 'out_of_stock'" (click)="setStockFilter('out_of_stock')">
+          Out of Stock
+        </button>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:60px;">S.NO</th>
+            <th>PRODUCT</th>
+            <th>COLOR</th>
+            <th>SIZE</th>
+            <th>SKU</th>
+            <th>PRICE</th>
+            <th>STOCK</th>
+            <th>STATUS</th>
+            <th class="action-col">ACTION</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="loading">
+            <td colspan="9" class="empty-row">
+              <div class="loader"></div>
+              Loading inventory...
+            </td>
+          </tr>
+          <tr *ngIf="!loading && loadError">
+            <td colspan="9" class="empty-row error-row">{{ loadError }}</td>
+          </tr>
+          <tr *ngIf="!loading && !loadError && pagedRows.length === 0">
+            <td colspan="9" class="empty-row">No matching stock records found.</td>
+          </tr>
+
+          <tr *ngFor="let row of pagedRows; let i = index; trackBy: trackByRow">
+            <td>{{ (page - 1) * pageSize + i + 1 }}</td>
+
+            <td>
+              <div class="product-cell">
+                <div class="product-thumb">
+                  <img *ngIf="row.image" [src]="row.image" [alt]="row.productName" />
+                  <span *ngIf="!row.image" class="no-thumb">—</span>
+                </div>
+                <div class="product-meta">
+                  <span class="product-name">{{ row.productName }}</span>
+                  <span class="product-brand">{{ row.brand }} · {{ row.categoryName }}</span>
+                </div>
+              </div>
+            </td>
+
+            <td>
+              <div class="color-cell">
+                <span class="color-dot" [style.background]="row.colorCode"></span>
+                {{ row.colorName }}
+              </div>
+            </td>
+
+            <td><span class="size-badge">{{ row.size }}</span></td>
+
+            <td class="cell-sku">{{ row.sku }}</td>
+
+            <td>₹{{ row.price }}</td>
+
+            <td class="cell-stock-num">{{ row.stock }}</td>
+
+            <td>
+              <span class="status-pill" [ngClass]="stockStatus(row.stock)">
+                <span class="status-dot"></span>
+                {{ stockStatus(row.stock) === 'out' ? 'Out of stock' : stockStatus(row.stock) === 'low' ? 'Low stock' : 'In stock' }}
+              </span>
+            </td>
+
+            <td class="action-col">
+              <button class="btn-update" (click)="openUpdateStockModal(row)">Update Stock</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-bar" *ngIf="!loading && filteredRows.length > 0">
+      <div class="page-size">
+        <span>Rows per page</span>
+        <select [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="25">25</option>
+          <option [ngValue]="50">50</option>
+          <option [ngValue]="100">100</option>
+        </select>
+      </div>
+      <div class="page-info">Page {{ page }} of {{ totalPages }} · {{ filteredRows.length }} records</div>
+      <div class="page-controls">
+        <button class="page-btn" [disabled]="page === 1" (click)="goToPage(1)">«</button>
+        <button class="page-btn" [disabled]="page === 1" (click)="goToPage(page - 1)">Prev</button>
+        <ng-container *ngFor="let p of pageNumbers">
+          <button *ngIf="p !== '...'" class="page-btn number" [class.active]="p === page" (click)="goToPage(p)">
+            {{ p }}
+          </button>
+          <span *ngIf="p === '...'" class="dots">…</span>
+        </ng-container>
+        <button class="page-btn" [disabled]="page === totalPages" (click)="goToPage(page + 1)">Next</button>
+        <button class="page-btn" [disabled]="page === totalPages" (click)="goToPage(totalPages)">»</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- ======================= UPDATE STOCK MODAL ========================== -->
+<!-- ================================================================== -->
+<div class="modal fade" id="updateStockModal" tabindex="-1" aria-hidden="true" #updateStockModal>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content custom-modal">
+      <div class="modal-header">
+        <h5 class="modal-title">Update Stock</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" *ngIf="activeRow">
+        <div class="alert-error" *ngIf="stockFormError">{{ stockFormError }}</div>
+
+        <div class="modal-product-summary">
+          <div class="product-thumb large">
+            <img *ngIf="activeRow.image" [src]="activeRow.image" [alt]="activeRow.productName" />
+            <span *ngIf="!activeRow.image" class="no-thumb">—</span>
+          </div>
+          <div>
+            <div class="modal-product-name">{{ activeRow.productName }}</div>
+            <div class="modal-product-sub">{{ activeRow.brand }}</div>
+            <div class="modal-product-tags">
+              <span class="color-dot" [style.background]="activeRow.colorCode"></span>
+              {{ activeRow.colorName }}
+              <span class="tag-sep">·</span>
+              Size {{ activeRow.size }}
+              <span class="tag-sep">·</span>
+              {{ activeRow.sku }}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Current Stock</label>
+          <div class="current-stock-line">
+            {{ activeRow.stock }} units
+            <span class="status-pill" [ngClass]="stockStatus(activeRow.stock)">
+              {{ stockStatus(activeRow.stock) === 'out' ? 'Out of stock' : stockStatus(activeRow.stock) === 'low' ? 'Low stock' : 'In stock' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">New Stock Quantity</label>
+          <div class="stock-input-row">
+            <button type="button" class="stepper-btn" (click)="adjustStock(-1)">−</button>
+            <input type="number" class="form-control stock-input" [(ngModel)]="newStockValue" min="0" />
+            <button type="button" class="stepper-btn" (click)="adjustStock(1)">+</button>
+          </div>
+          <div class="stepper-hints">
+            <button type="button" class="hint-btn" (click)="adjustStock(5)">+5</button>
+            <button type="button" class="hint-btn" (click)="adjustStock(10)">+10</button>
+            <button type="button" class="hint-btn" (click)="adjustStock(25)">+25</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn-primary" [disabled]="savingStock" (click)="submitUpdateStock()">
+          {{ savingStock ? 'Saving...' : 'Save Stock' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

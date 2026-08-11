@@ -539,3 +539,27 @@ select.form-control {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+
+
+/* ---------- Disabled/readonly fields in Edit modals ---------- */
+.form-control:disabled {
+  background: var(--bg-head);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  font-weight: 600;
+}
+
+/* ---------- Replace-image link shown alongside existing preview ---------- */
+.replace-img-link {
+  display: inline-block;
+  margin-top: 10px;
+  margin-left: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--orange-dark);
+  cursor: pointer;
+}
+.replace-img-link:hover {
+  text-decoration: underline;
+}
