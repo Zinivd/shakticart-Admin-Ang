@@ -1,0 +1,90 @@
+<div class="page-wrapper">
+
+  <div class="page-header">
+    <h1 class="page-title">Order List</h1>
+  </div>
+
+  <div class="card">
+
+    <!-- Search -->
+    <div class="search-row">
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Search Here..."
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="onSearch()" />
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:60px;">#</th>
+            <th>ORDER ID</th>
+            <th>PRODUCTS</th>
+            <th>CUSTOMER</th>
+            <th>AMOUNT</th>
+            <th>PAYMENT MODE</th>
+            <th>PAYMENT STATUS</th>
+            <th>ORDER STATUS</th>
+            <th class="action-col">ACTION</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="loading">
+            <td colspan="9" class="empty-row">Loading orders...</td>
+          </tr>
+          <tr *ngIf="!loading && pagedOrders.length === 0">
+            <td colspan="9" class="empty-row">No matching records found</td>
+          </tr>
+          <tr *ngFor="let order of pagedOrders; let i = index; trackBy: trackByOrder">
+            <td>{{ (page - 1) * pageSize + i + 1 }}</td>
+            <td class="order-id">{{ order.order_id }}</td>
+            <td class="products-cell" [title]="productNames(order)">{{ productNames(order) }}</td>
+            <td>{{ order.customer_name }}</td>
+            <td>{{ formatAmount(order.amount) }}</td>
+            <td>{{ order.payment_mode || '—' }}</td>
+            <td><span [ngClass]="paymentStatusClass(order.payment_status)">{{ order.payment_status || '—' }}</span></td>
+            <td><span [ngClass]="orderStatusClass(order.order_status)">{{ order.order_status || '—' }}</span></td>
+            <td class="action-col">
+              <button class="icon-btn view" (click)="viewOrder(order)" title="View order">👁</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-bar">
+      <div class="page-size">
+        <span>Rows per page</span>
+        <select [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="25">25</option>
+          <option [ngValue]="50">50</option>
+        </select>
+      </div>
+
+      <div class="page-info">Page {{ page }} of {{ totalPages }}</div>
+
+      <div class="page-controls">
+        <button class="page-btn" [disabled]="page === 1" (click)="goToPage(1)">«</button>
+        <button class="page-btn" [disabled]="page === 1" (click)="goToPage(page - 1)">Prev</button>
+
+        <ng-container *ngFor="let p of pageNumbers">
+          <button *ngIf="p !== '...'" class="page-btn number" [class.active]="p === page" (click)="goToPage(p)">
+            {{ p }}
+          </button>
+          <span *ngIf="p === '...'" class="dots">…</span>
+        </ng-container>
+
+        <button class="page-btn" [disabled]="page === totalPages" (click)="goToPage(page + 1)">Next</button>
+        <button class="page-btn" [disabled]="page === totalPages" (click)="goToPage(totalPages)">»</button>
+      </div>
+    </div>
+
+  </div>
+</div>

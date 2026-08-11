@@ -1,0 +1,68 @@
+<div class="color-list-wrapper">
+
+  <!-- Header -->
+  <div class="page-header">
+    <h2 class="page-title">Colors</h2>
+    <button type="button" class="btn-add" (click)="goToAddColor()">
+      <span class="plus-icon">+</span> Add Color
+    </button>
+  </div>
+
+  <!-- Table Card -->
+  <div class="table-card">
+
+    <!-- Loading State -->
+    <div class="state-block" *ngIf="loading">
+      <div class="spinner"></div>
+      <p>Loading colors...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div class="state-block" *ngIf="!loading && colors.length === 0">
+      <p>No colors found.</p>
+      <button type="button" class="btn-add" (click)="goToAddColor()">
+        <span class="plus-icon">+</span> Add Color
+      </button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-responsive" *ngIf="!loading && colors.length > 0">
+      <table class="color-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Color Code</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let color of colors">
+            <td>{{ color.name }}</td>
+            <td>
+              <div class="code-cell">
+                <span class="swatch" [style.background]="color.code"></span>
+                <span class="code-text">{{ color.code }}</span>
+              </div>
+            </td>
+            <td class="text-center">
+              <button
+                type="button"
+                class="btn-delete"
+                [disabled]="deletingId === color.id"
+                (click)="deleteColor(color)"
+                title="Delete color">
+                <svg *ngIf="deletingId !== color.id" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 6h18"></path>
+                  <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                </svg>
+                <span *ngIf="deletingId === color.id" class="mini-spinner"></span>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
