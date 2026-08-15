@@ -5,14 +5,12 @@ import { ToastrService } from 'ngx-toastr';
 import { ApiServicesService } from '../../../apiservice/api-services.service';
 
 // ---------------- Interfaces ----------------
-
 interface CategoryRef {
   id: number;
   category_id: string;
   category_name: string;
   image: string;
 }
-
 interface Banner {
   id: number;
   name: string;
@@ -24,7 +22,6 @@ interface Banner {
   created_at: string;
   updated_at: string;
 }
-
 interface BannersPaginatedPayload {
   current_page: number;
   data: Banner[];
@@ -34,12 +31,10 @@ interface BannersPaginatedPayload {
   from: number | null;
   to: number | null;
 }
-
 interface BannersResponse {
   status: string;
   data: BannersPaginatedPayload;
 }
-
 interface LibraryFile {
   id: number;
   name: string;
@@ -47,7 +42,6 @@ interface LibraryFile {
   url: string;
   isImage: boolean;
 }
-
 interface PendingUpload {
   name: string;
   size: string;
@@ -55,7 +49,6 @@ interface PendingUpload {
   isImage: boolean;
   file: File;
 }
-
 type PickerTarget = 'desktop' | 'mobile';
 type PickerTab = 'select' | 'upload';
 
@@ -71,7 +64,6 @@ export class BannersListComponent implements OnInit {
   banners: Banner[] = [];
   filteredBanners: Banner[] = [];
   categories: CategoryRef[] = [];
-
   searchTerm = '';
   loading = false;
   loadingCategories = false;
@@ -87,7 +79,6 @@ export class BannersListComponent implements OnInit {
   showAddModal = false;
   savingBanner = false;
   bannerFormError = '';
-
   newBannerName = '';
   newBannerCategoryId: number | null = null;
   newBannerIsPublished = true;
@@ -98,7 +89,6 @@ export class BannersListComponent implements OnInit {
   showPicker = false;
   pickerTarget: PickerTarget = 'desktop';
   pickerTab: PickerTab = 'select';
-
   libraryFiles: LibraryFile[] = [];
   loadingLibrary = false;
   librarySearch = '';
@@ -122,7 +112,6 @@ export class BannersListComponent implements OnInit {
   // =====================================================================
   // ========================= DATA FETCHING ================================
   // =====================================================================
-
   getAllBanners(): void {
     this.loading = true;
     this.apiServices.getAllBanners<BannersResponse>().subscribe({
@@ -175,25 +164,20 @@ export class BannersListComponent implements OnInit {
     const start = (this.page - 1) * this.pageSize;
     return this.filteredBanners.slice(start, start + this.pageSize);
   }
-
   get totalPages(): number {
     return Math.max(1, Math.ceil(this.filteredBanners.length / this.pageSize));
   }
-
   get pageNumbers(): (number | string)[] {
     return this.buildPageNumbers(this.page, this.totalPages);
   }
-
   goToPage(page: number | string): void {
     if (typeof page !== 'number') return;
     if (page < 1 || page > this.totalPages) return;
     this.page = page;
   }
-
   onPageSizeChange(): void {
     this.page = 1;
   }
-
   private buildPageNumbers(current: number, total: number): (number | string)[] {
     const delta = 1;
     const range: number[] = [];
@@ -217,11 +201,9 @@ export class BannersListComponent implements OnInit {
     }
     return withDots;
   }
-
   trackByBanner(index: number, item: Banner): number {
     return item.id;
   }
-
   getCategoryName(banner: Banner): string {
     return banner.category?.category_name
       ?? this.categories.find(c => c.id === banner.category_id)?.category_name
@@ -231,18 +213,14 @@ export class BannersListComponent implements OnInit {
   // =====================================================================
   // ========================= PUBLISH TOGGLE ================================
   // =====================================================================
-
   isToggling(id: number): boolean {
     return this.togglingIds.has(id);
   }
-
   togglePublish(banner: Banner): void {
     if (this.togglingIds.has(banner.id)) return;
-
     this.togglingIds.add(banner.id);
     const previousState = banner.is_published;
     banner.is_published = !banner.is_published; // optimistic update
-
     this.apiServices.publishBanners(banner.id).subscribe({
       next: (res: any) => {
         this.togglingIds.delete(banner.id);
@@ -262,7 +240,6 @@ export class BannersListComponent implements OnInit {
   // =====================================================================
   // ========================= ADD BANNER MODAL ==============================
   // =====================================================================
-
   openAddBannerModal(): void {
     this.newBannerName = '';
     this.newBannerCategoryId = null;
@@ -273,22 +250,17 @@ export class BannersListComponent implements OnInit {
     this.savingBanner = false;
     this.showAddModal = true;
   }
-
   closeAddBannerModal(): void {
     this.showAddModal = false;
   }
-
   removeDesktopImage(): void {
     this.newBannerDesktopImage = null;
   }
-
   removeMobileImage(): void {
     this.newBannerMobileImage = null;
   }
-
   submitAddBanner(): void {
     this.bannerFormError = '';
-
     if (!this.newBannerName.trim()) {
       this.bannerFormError = 'Banner name is required.';
       return;
@@ -305,7 +277,6 @@ export class BannersListComponent implements OnInit {
       this.bannerFormError = 'Mobile image is required.';
       return;
     }
-
     const payload = {
       name: this.newBannerName.trim(),
       category_id: this.newBannerCategoryId,
@@ -313,7 +284,6 @@ export class BannersListComponent implements OnInit {
       mobile_image: this.newBannerMobileImage,
       is_published: this.newBannerIsPublished
     };
-
     this.savingBanner = true;
     this.apiServices.createbanners(payload).subscribe({
       next: (res: any) => {
@@ -333,7 +303,6 @@ export class BannersListComponent implements OnInit {
   // =====================================================================
   // ==================== IMAGE PICKER MODAL (shared) ======================
   // =====================================================================
-
   openImagePicker(target: PickerTarget): void {
     this.pickerTarget = target;
     this.pickerTab = 'select';
@@ -343,13 +312,11 @@ export class BannersListComponent implements OnInit {
     this.showPicker = true;
     this.loadLibraryFiles();
   }
-
   closeImagePicker(): void {
     this.showPicker = false;
     this.selectedLibraryId = null;
     this.pendingFiles = [];
   }
-
   @HostListener('document:keydown.escape')
   onEscape(): void {
     if (this.showPicker) {
@@ -358,11 +325,9 @@ export class BannersListComponent implements OnInit {
       this.closeAddBannerModal();
     }
   }
-
   switchPickerTab(tab: PickerTab): void {
     this.pickerTab = tab;
   }
-
   loadLibraryFiles(): void {
     this.loadingLibrary = true;
     this.apiServices.getimagegetAll().subscribe({
@@ -386,26 +351,21 @@ export class BannersListComponent implements OnInit {
       }
     });
   }
-
   get filteredLibraryFiles(): LibraryFile[] {
     const term = this.librarySearch.trim().toLowerCase();
     if (!term) return this.libraryFiles;
     return this.libraryFiles.filter(f => f.name.toLowerCase().includes(term));
   }
-
   isLibrarySelected(file: LibraryFile): boolean {
     return this.selectedLibraryId === file.id;
   }
-
   toggleLibrarySelect(file: LibraryFile): void {
     // single-select for banner images (only 1 desktop / 1 mobile image needed)
     this.selectedLibraryId = this.selectedLibraryId === file.id ? null : file.id;
   }
-
   clearLibrarySelection(): void {
     this.selectedLibraryId = null;
   }
-
   confirmAddFile(): void {
     const file = this.libraryFiles.find(f => f.id === this.selectedLibraryId);
     if (!file) {
@@ -415,7 +375,6 @@ export class BannersListComponent implements OnInit {
     this.applyUrlToTarget(file.url);
     this.closeImagePicker();
   }
-
   private applyUrlToTarget(url: string): void {
     if (this.pickerTarget === 'desktop') {
       this.newBannerDesktopImage = url;
@@ -425,16 +384,13 @@ export class BannersListComponent implements OnInit {
   }
 
   // ---------------- Upload New tab ----------------
-
   onDragOver(event: DragEvent): void {
     event.preventDefault();
     this.dragOver = true;
   }
-
   onDragLeave(): void {
     this.dragOver = false;
   }
-
   onDrop(event: DragEvent): void {
     event.preventDefault();
     this.dragOver = false;
@@ -442,23 +398,26 @@ export class BannersListComponent implements OnInit {
       this.processFiles(event.dataTransfer.files);
     }
   }
-
   onFileInputChange(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files) this.processFiles(input.files);
     input.value = '';
   }
-
   processFiles(fileList: FileList): void {
-    // only need one image at a time for a banner slot
-    const file = fileList[0];
-    if (!file) return;
+    // Accept every file in the drop/selection, not just the first one,
+    // and ADD to whatever is already pending instead of wiping it out —
+    // this is what makes multi-file drop/select actually work.
+    const files = Array.from(fileList);
+    if (!files.length) return;
 
-    this.pendingFiles = [];
-    const isImage = file.type.startsWith('image/');
-    const sizeKB = (file.size / 1024).toFixed(2) + ' KB';
+    let skippedNonImage = false;
 
-    if (isImage) {
+    files.forEach(file => {
+      if (!file.type.startsWith('image/')) {
+        skippedNonImage = true;
+        return;
+      }
+      const sizeKB = (file.size / 1024).toFixed(2) + ' KB';
       const reader = new FileReader();
       reader.onload = (e) => {
         this.pendingFiles.push({
@@ -470,41 +429,43 @@ export class BannersListComponent implements OnInit {
         });
       };
       reader.readAsDataURL(file);
-    } else {
-      this.toastr.warning('Please select an image file.');
+    });
+
+    if (skippedNonImage) {
+      this.toastr.warning('Some files were skipped because they are not images.');
     }
   }
-
   removePending(index: number): void {
     this.pendingFiles.splice(index, 1);
   }
-
   uploadFiles(): void {
     if (this.pendingFiles.length === 0) {
       this.toastr.warning('No file to upload.');
       return;
     }
-
     const formData = new FormData();
-    formData.append('files[]', this.pendingFiles[0].file, this.pendingFiles[0].name);
-
+    this.pendingFiles.forEach(pf => {
+      formData.append('files[]', pf.file, pf.name);
+    });
     this.uploading = true;
     this.apiServices.imageUpload(formData).subscribe({
       next: (res: any) => {
         this.uploading = false;
-        this.toastr.success('Uploaded successfully.');
-
         const uploaded: any[] = res?.data || [];
-        const url = uploaded.length ? uploaded[0].file_url : null;
-
-        if (url) {
-          this.applyUrlToTarget(url);
-        }
-
+        this.toastr.success(
+          uploaded.length > 1 ? `${uploaded.length} files uploaded successfully.` : 'Uploaded successfully.'
+        );
         this.pendingFiles = [];
-        this.pickerTab = 'select';
         this.loadLibraryFiles();
-        this.closeImagePicker();
+
+        if (uploaded.length === 1) {
+          // only one image — apply it straight to this desktop/mobile slot, same as before
+          this.applyUrlToTarget(uploaded[0].file_url);
+          this.closeImagePicker();
+        } else if (uploaded.length > 1) {
+          // several images uploaded — let the user pick which one goes on this slot
+          this.pickerTab = 'select';
+        }
       },
       error: (err: any) => {
         console.log(err);

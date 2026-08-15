@@ -1,20 +1,16 @@
 <div class="page-wrapper">
-
   <!-- Loading state -->
   <div class="loading-state" *ngIf="loadingProduct">
     <div class="loader"></div>
     <p>Loading product details...</p>
   </div>
-
   <!-- Error state -->
   <div class="loading-state" *ngIf="!loadingProduct && loadError">
     <p class="load-error-text">{{ loadError }}</p>
     <button class="btn-secondary" (click)="cancel()">Back to Products</button>
   </div>
-
   <!-- Form -->
   <ng-container *ngIf="!loadingProduct && !loadError">
-
     <div class="page-header">
       <h1 class="page-title">Edit Product</h1>
       <!-- <div class="header-actions">
@@ -24,13 +20,10 @@
         </button>
       </div> -->
     </div>
-
     <div class="alert-error" *ngIf="formError">{{ formError }}</div>
-
     <!-- ============ BASIC INFORMATION ============ -->
     <div class="card section">
       <h2 class="section-title">Basic Information</h2>
-
       <div class="grid-2">
         <div class="form-group">
           <label class="form-label">Product Name *</label>
@@ -41,7 +34,6 @@
           <input type="text" class="form-control" [(ngModel)]="brand" placeholder="e.g. Nike" />
         </div>
       </div>
-
       <div class="grid-2">
         <div class="form-group">
           <label class="form-label">Category *</label>
@@ -60,7 +52,6 @@
           </select>
         </div>
       </div>
-
       <div class="grid-3">
         <div class="form-group">
           <label class="form-label">Actual Price *</label>
@@ -77,13 +68,11 @@
           <input type="number" class="form-control" [(ngModel)]="discount_percent" placeholder="0" />
         </div>
       </div>
-
       <div class="form-group">
         <label class="form-label">Description</label>
         <textarea class="form-control" rows="3" [(ngModel)]="description"
           placeholder="Premium cotton polo t-shirt with breathable fabric"></textarea>
       </div>
-
       <div class="grid-2">
         <div class="form-group">
           <label class="form-label">Product Listing Type</label>
@@ -99,12 +88,23 @@
           </label>
         </div>
       </div>
+      <!-- Tags -->
+      <div class="form-group">
+        <label class="form-label">Tags ({{ tags.length }}/5)</label>
+        <div class="tag-input-row">
+          <div class="tag-chip" *ngFor="let tag of tags; let i = index">
+            <span>{{ tag }}</span>
+            <button type="button" class="tag-remove" (click)="removeTag(i)">✕</button>
+          </div>
+          <input type="text" class="tag-input" [(ngModel)]="tagInput" (keydown.enter)="addTag($event)"
+            [placeholder]="tags.length < 5 ? 'Type a tag and press Enter' : 'Max 5 tags reached'"
+            [disabled]="tags.length >= 5" />
+        </div>
+      </div>
     </div>
-
     <!-- ============ PRODUCT VARIANTS ============ -->
     <div class="card section">
       <h2 class="section-title">Product Variants</h2>
-
       <div class="form-group">
         <label class="form-label">Colors *</label>
         <div class="color-chip-row">
@@ -115,7 +115,6 @@
           </label>
         </div>
       </div>
-
       <!-- Per-color panel -->
       <div class="variant-panel" *ngFor="let variant of variants; let vIndex = index">
         <div class="variant-panel-header">
@@ -127,7 +126,6 @@
             🗑 Remove color
           </button>
         </div>
-
         <!-- Gallery images -->
         <div class="form-group">
           <div class="gallery-row">
@@ -145,7 +143,6 @@
             </div>
           </div>
         </div>
-
         <!-- Sizes -->
         <div class="form-group">
           <label class="form-label">Sizes *</label>
@@ -156,7 +153,6 @@
             </button>
           </div>
         </div>
-
         <!-- Size / SKU / Price / Stock table -->
         <div class="size-table-wrapper" *ngIf="variant.sizeRows.length">
           <table class="size-table">
@@ -183,22 +179,18 @@
           </table>
         </div>
       </div>
-
       <div class="empty-variant-hint" *ngIf="variants.length === 0">
         Select at least one color above to configure its images, sizes, and pricing.
       </div>
     </div>
-
     <div class="bottom-actions">
       <button class="btn-secondary" (click)="cancel()">Cancel</button>
       <button class="btn-primary" [disabled]="submitting" (click)="submitProduct()">
         {{ submitting ? 'Saving...' : 'Save Changes' }}
       </button>
     </div>
-
   </ng-container>
 </div>
-
 <!-- ================================================================== -->
 <!-- =================== IMAGE PICKER MODAL (shared) ===================== -->
 <!-- ================================================================== -->
@@ -213,7 +205,6 @@
       </div>
       <button type="button" class="picker-close" (click)="closeImagePicker()">✕</button>
     </div>
-
     <!-- ===== SELECT FILE TAB ===== -->
     <div class="picker-body" *ngIf="pickerTab === 'select'">
       <div class="picker-toolbar">
@@ -222,7 +213,6 @@
         </span>
         <input type="text" class="picker-search" placeholder="Search your files" [(ngModel)]="librarySearch" />
       </div>
-
       <div class="picker-grid" *ngIf="!loadingLibrary">
         <div class="picker-item" *ngFor="let file of filteredLibraryFiles"
           [class.selected]="isLibrarySelected(file)" (click)="toggleLibrarySelect(file)">
@@ -238,7 +228,6 @@
       </div>
       <div class="picker-loading" *ngIf="loadingLibrary">Loading files...</div>
     </div>
-
     <!-- ===== UPLOAD NEW TAB ===== -->
     <div class="picker-body" *ngIf="pickerTab === 'upload'">
       <div class="upload-dropzone" [class.drag-over]="dragOver" (dragover)="onDragOver($event)"
@@ -250,7 +239,6 @@
           <input type="file" id="pickerFileInput" accept="image/*" multiple class="file-input-hidden"
             (change)="onFileInputChange($event)" />
         </ng-container>
-
         <div class="pending-grid" *ngIf="pendingFiles.length">
           <div class="pending-item" *ngFor="let pf of pendingFiles; let i = index">
             <img *ngIf="pf.preview" [src]="pf.preview" [alt]="pf.name" />
@@ -265,7 +253,6 @@
         </div>
       </div>
     </div>
-
     <!-- ===== FOOTER ===== -->
     <div class="picker-footer">
       <div class="picker-footer-left" *ngIf="pickerTab === 'select'">

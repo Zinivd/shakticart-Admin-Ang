@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { ApiServicesService } from '../../../apiservice/api-services.service';
-
 // ---------------- Interfaces ----------------
 interface SubCategoryOpt {
   id: number;
@@ -52,14 +51,13 @@ interface PendingUpload {
 }
 type PickerTarget = 'main' | number; // 'main' or variant index
 type PickerTab = 'select' | 'upload';
-
 const ALL_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 const PRODUCT_LIST_TYPES = [
   { value: 'trending_now', label: 'Trending now' },
   { value: 'best_sellers', label: 'Best sellers' },
   { value: 'top_offers', label: 'Top offers' }
 ];
-
+const MAX_TAGS = 5;
 @Component({
   selector: 'app-product-update',
   standalone: true,
@@ -71,18 +69,15 @@ export class ProductUpdateComponent implements OnInit {
   // ---------------- Static lists ----------------
   allSizes = ALL_SIZES;
   productListTypes = PRODUCT_LIST_TYPES;
-
   // ---------------- Route / entity ----------------
   productId: any;
   loadingProduct = true;
   loadError = '';
-
   // ---------------- Master data ----------------
   categories: CategoryOpt[] = [];
   colors: ColorOpt[] = [];
   loadingCategories = false;
   loadingColors = false;
-
   // ---------------- Form fields ----------------
   name = '';
   brand = '';
@@ -95,14 +90,14 @@ export class ProductUpdateComponent implements OnInit {
   product_list_type = 'trending_now';
   is_published = true;
   mainImages: string[] = [];
-
+  // ---------------- Tags ----------------
+  tags: string[] = [];
+  tagInput = '';
   // ---------------- Variants ----------------
   variants: ColorVariant[] = [];
   removedColorIds: number[] = []; // track removed existing variants for backend if needed
-
   submitting = false;
   formError = '';
-
   // ---------------- Image library / picker modal ----------------
   showPicker = false;
   pickerTarget: PickerTarget = 'main';
@@ -112,38 +107,31 @@ export class ProductUpdateComponent implements OnInit {
   loadingLibrary = false;
   librarySearch = '';
   selectedLibraryIds: number[] = [];
-
   // upload tab
   dragOver = false;
   uploading = false;
   pendingFiles: PendingUpload[] = [];
-
   // guard: don't reset subcategory_id when data is still being populated from API
   private isHydrating = false;
-
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private apiServices: ApiServicesService,
     private toastr: ToastrService
   ) {}
-
   ngOnInit(): void {
     this.productId = this.route.snapshot.paramMap.get('id');
     this.loadInitialData();
   }
-
   // =====================================================================
   // ========================= INITIAL LOAD ================================
   // =====================================================================
   private loadInitialData(): void {
     this.loadingProduct = true;
-
     // Load categories + colors first so dropdowns/chips are ready,
     // then load the product and hydrate the form.
     this.loadingCategories = true;
     this.loadingColors = true;
-
     this.apiServices.getAllCategories().subscribe({
       next: (res: any) => {
         this.categories = res?.data ?? [];
@@ -156,7 +144,6 @@ export class ProductUpdateComponent implements OnInit {
         this.tryFetchProduct();
       }
     });
-
     this.apiServices.getAllColors().subscribe({
       next: (res: any) => {
         this.colors = res?.data || res || [];
@@ -171,10 +158,8 @@ export class ProductUpdateComponent implements OnInit {
       }
     });
   }
-
   private categoriesReady = false;
   private colorsReady = false;
-
   private tryFetchProduct(): void {
     // Fire product fetch only after both master lists have resolved (success or fail)
     if (!this.loadingCategories && !this.categoriesReady) {
@@ -187,7 +172,6 @@ export class ProductUpdateComponent implements OnInit {
       this.getProductById(this.productId);
     }
   }
-
   getProductById(data: any): void {
     this.apiServices.getAllProductsbyid(data).subscribe({
       next: (res: any) => {
@@ -205,13 +189,11 @@ export class ProductUpdateComponent implements OnInit {
       }
     });
   }
-
   // =====================================================================
   // ========================= HYDRATE FORM ================================
   // =====================================================================
   private hydrateForm(product: any): void {
     this.isHydrating = true;
-
     this.name = product.name || '';
     this.brand = product.brand || '';
     this.category_id = product.category_id ?? null;
@@ -223,7 +205,7 @@ export class ProductUpdateComponent implements OnInit {
     this.product_list_type = product.product_list_type || 'trending_now';
     this.is_published = !!product.is_published;
     this.mainImages = product.images || [];
-
+    this.tags = Array.isArray(product.tags) ? [...product.tags] : [];
     this.variants = (product.colors || []).map((c: any) => {
       const sizeRows: SizeRow[] = (c.inventories || []).map((inv: any) => ({
         id: inv.id,
@@ -232,7 +214,6 @@ export class ProductUpdateComponent implements OnInit {
         price: inv.price !== null ? Number(inv.price) : null,
         stock: inv.stock !== null ? Number(inv.stock) : 0
       }));
-
       return {
         id: c.id, // product_color id
         color_id: c.color_id,
@@ -243,10 +224,8 @@ export class ProductUpdateComponent implements OnInit {
         sizeRows
       } as ColorVariant;
     });
-
     this.isHydrating = false;
   }
-
   // =====================================================================
   // ========================= MASTER DATA HELPERS ==========================
   // =====================================================================
@@ -254,12 +233,10 @@ export class ProductUpdateComponent implements OnInit {
     const cat = this.categories.find(c => c.id === this.category_id);
     return cat?.subcategories ?? [];
   }
-
   onCategoryChange(): void {
     if (this.isHydrating) return; // don't wipe subcategory while populating from API
     this.subcategory_id = null;
   }
-
   // =====================================================================
   // ========================= PRICING =====================================
   // =====================================================================
@@ -269,14 +246,36 @@ export class ProductUpdateComponent implements OnInit {
       this.discount_percent = Math.round((diff / this.actual_price) * 100);
     }
   }
-
+  // =====================================================================
+  // ========================= TAGS =========================================
+  // =====================================================================
+  addTag(event: Event): void {
+    event.preventDefault();
+    const value = this.tagInput.trim();
+    if (!value) return;
+    if (this.tags.length >= MAX_TAGS) {
+      this.toastr.warning(`You can add up to ${MAX_TAGS} tags only.`);
+      this.tagInput = '';
+      return;
+    }
+    const exists = this.tags.some(t => t.toLowerCase() === value.toLowerCase());
+    if (exists) {
+      this.toastr.warning('This tag has already been added.');
+      this.tagInput = '';
+      return;
+    }
+    this.tags.push(value);
+    this.tagInput = '';
+  }
+  removeTag(index: number): void {
+    this.tags.splice(index, 1);
+  }
   // =====================================================================
   // ========================= COLOR VARIANTS ==============================
   // =====================================================================
   isColorSelected(colorId: number): boolean {
     return this.variants.some(v => v.color_id === colorId);
   }
-
   toggleColor(color: ColorOpt): void {
     const idx = this.variants.findIndex(v => v.color_id === color.id);
     if (idx > -1) {
@@ -293,7 +292,6 @@ export class ProductUpdateComponent implements OnInit {
       });
     }
   }
-
   removeColorVariant(index: number): void {
     const variant = this.variants[index];
     if (variant?.id) {
@@ -301,11 +299,9 @@ export class ProductUpdateComponent implements OnInit {
     }
     this.variants.splice(index, 1);
   }
-
   isSizeSelected(variant: ColorVariant, size: string): boolean {
     return variant.selectedSizes.includes(size);
   }
-
   toggleSize(variant: ColorVariant, size: string): void {
     const pos = variant.selectedSizes.indexOf(size);
     if (pos > -1) {
@@ -322,30 +318,25 @@ export class ProductUpdateComponent implements OnInit {
       });
     }
   }
-
   removeSizeRow(variant: ColorVariant, size: string): void {
     variant.selectedSizes = variant.selectedSizes.filter(s => s !== size);
     variant.sizeRows = variant.sizeRows.filter(r => r.size !== size);
   }
-
   private generateSku(variant: ColorVariant, size: string): string {
     const colorPrefix = (variant.name || 'CLR').substring(0, 3).toUpperCase();
     const catPart = this.category_id ?? 0;
     const random = Math.floor(10000 + Math.random() * 90000);
     return `${colorPrefix}-${size}-${catPart}-${random}`;
   }
-
   removeVariantImage(variant: ColorVariant, index: number): void {
     variant.images.splice(index, 1);
   }
-
   // =====================================================================
   // ========================= MAIN IMAGES =================================
   // =====================================================================
   removeMainImage(index: number): void {
     this.mainImages.splice(index, 1);
   }
-
   // =====================================================================
   // ==================== IMAGE PICKER MODAL (shared) ======================
   // =====================================================================
@@ -358,22 +349,18 @@ export class ProductUpdateComponent implements OnInit {
     this.showPicker = true;
     this.loadLibraryFiles();
   }
-
   closeImagePicker(): void {
     this.showPicker = false;
     this.selectedLibraryIds = [];
     this.pendingFiles = [];
   }
-
   @HostListener('document:keydown.escape')
   onEscape(): void {
     if (this.showPicker) this.closeImagePicker();
   }
-
   switchPickerTab(tab: PickerTab): void {
     this.pickerTab = tab;
   }
-
   loadLibraryFiles(): void {
     this.loadingLibrary = true;
     this.apiServices.getimagegetAll().subscribe({
@@ -397,27 +384,22 @@ export class ProductUpdateComponent implements OnInit {
       }
     });
   }
-
   get filteredLibraryFiles(): LibraryFile[] {
     const term = this.librarySearch.trim().toLowerCase();
     if (!term) return this.libraryFiles;
     return this.libraryFiles.filter(f => f.name.toLowerCase().includes(term));
   }
-
   get currentTargetMax(): number {
     return this.pickerTarget === 'main' ? 999 : this.pickerMaxSelectable;
   }
-
   get currentTargetExistingCount(): number {
     if (this.pickerTarget === 'main') return this.mainImages.length;
     const v = this.variants[this.pickerTarget as number];
     return v ? v.images.length : 0;
   }
-
   isLibrarySelected(file: LibraryFile): boolean {
     return this.selectedLibraryIds.includes(file.id);
   }
-
   toggleLibrarySelect(file: LibraryFile): void {
     const pos = this.selectedLibraryIds.indexOf(file.id);
     if (pos > -1) {
@@ -431,11 +413,9 @@ export class ProductUpdateComponent implements OnInit {
     }
     this.selectedLibraryIds.push(file.id);
   }
-
   clearLibrarySelection(): void {
     this.selectedLibraryIds = [];
   }
-
   confirmAddFiles(): void {
     const selectedUrls = this.libraryFiles
       .filter(f => this.selectedLibraryIds.includes(f.id))
@@ -447,7 +427,6 @@ export class ProductUpdateComponent implements OnInit {
     this.applyUrlsToTarget(selectedUrls);
     this.closeImagePicker();
   }
-
   private applyUrlsToTarget(urls: string[]): void {
     if (this.pickerTarget === 'main') {
       this.mainImages.push(...urls);
@@ -459,17 +438,14 @@ export class ProductUpdateComponent implements OnInit {
       }
     }
   }
-
   // ---------------- Upload New tab ----------------
   onDragOver(event: DragEvent): void {
     event.preventDefault();
     this.dragOver = true;
   }
-
   onDragLeave(): void {
     this.dragOver = false;
   }
-
   onDrop(event: DragEvent): void {
     event.preventDefault();
     this.dragOver = false;
@@ -477,13 +453,11 @@ export class ProductUpdateComponent implements OnInit {
       this.processFiles(event.dataTransfer.files);
     }
   }
-
   onFileInputChange(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files) this.processFiles(input.files);
     input.value = '';
   }
-
   processFiles(fileList: FileList): void {
     Array.from(fileList).forEach(file => {
       const isImage = file.type.startsWith('image/');
@@ -511,11 +485,9 @@ export class ProductUpdateComponent implements OnInit {
       }
     });
   }
-
   removePending(index: number): void {
     this.pendingFiles.splice(index, 1);
   }
-
   uploadFiles(): void {
     if (this.pendingFiles.length === 0) {
       this.toastr.warning('No files to upload.');
@@ -547,7 +519,6 @@ export class ProductUpdateComponent implements OnInit {
       }
     });
   }
-
   // =====================================================================
   // ========================= SUBMIT (UPDATE) ==============================
   // =====================================================================
@@ -595,7 +566,6 @@ export class ProductUpdateComponent implements OnInit {
     }
     return true;
   }
-
  private buildPayload(): any {
     return {
       name: this.name.trim(),
@@ -607,6 +577,7 @@ export class ProductUpdateComponent implements OnInit {
       discount_percent: this.discount_percent ?? 0,
       description: this.description.trim(),
       product_list_type: this.product_list_type,
+      tags: this.tags,
       images: this.mainImages,
       is_published: this.is_published,
       colors: this.variants.map(v => ({
@@ -624,16 +595,13 @@ export class ProductUpdateComponent implements OnInit {
       // removed_color_ids intentionally dropped — see note below
     };
   }
-
   submitProduct(): void {
     if (!this.validateForm()) {
       this.toastr.error(this.formError);
       return;
     }
-
     const payload = this.buildPayload();
     this.submitting = true;
-
     this.apiServices.updateProduct(this.productId, payload).subscribe({
       next: () => {
         this.submitting = false;
@@ -647,7 +615,6 @@ export class ProductUpdateComponent implements OnInit {
       }
     });
   }
-
   cancel(): void {
     this.router.navigate(['/superadmin/products/list']);
   }
