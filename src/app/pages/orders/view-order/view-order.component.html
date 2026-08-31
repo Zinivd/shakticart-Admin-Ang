@@ -1,1 +1,200 @@
-<p>view-order works!</p>
+<div class="page-wrapper">
+
+  <!-- Loading -->
+  <div class="state-panel" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading order details...</p>
+  </div>
+
+  <!-- Error -->
+  <div class="state-panel error" *ngIf="!loading && errorMessage">
+    <p>{{ errorMessage }}</p>
+    <button class="btn btn-secondary" (click)="goBack()">← Back to Orders</button>
+  </div>
+
+  <!-- Content -->
+  <ng-container *ngIf="!loading && order">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div class="header-left">
+        <button class="back-btn" (click)="goBack()" title="Back to orders">←</button>
+        <div>
+          <h1 class="page-title">Order {{ order.order_id }}</h1>
+          <p class="page-subtitle">Placed on {{ formatDate(order.created_at) }}</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <span [ngClass]="orderStatusClass(order.order_status)" class="badge-lg">{{ order.order_status }}</span>
+        <span [ngClass]="paymentStatusClass(order.payment_status)" class="badge-lg">{{ order.payment_status }}</span>
+      </div>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="summary-grid">
+      <div class="summary-card">
+        <span class="summary-label">Total Amount</span>
+        <span class="summary-value">{{ formatAmount(order.total_amount) }}</span>
+      </div>
+      <div class="summary-card">
+        <span class="summary-label">Payment Mode</span>
+        <span class="summary-value capitalize">{{ order.payment_mode || '—' }}</span>
+      </div>
+      <div class="summary-card">
+        <span class="summary-label">Items</span>
+        <span class="summary-value">{{ order.items.length || 0 }}</span>
+      </div>
+      <div class="summary-card">
+        <span class="summary-label">Shipped</span>
+        <span class="summary-value">{{ order.shipped_at ? formatDate(order.shipped_at) : '—' }}</span>
+      </div>
+      <div class="summary-card">
+        <span class="summary-label">Delivered</span>
+        <span class="summary-value">{{ order.delivered_at ? formatDate(order.delivered_at) : '—' }}</span>
+      </div>
+    </div>
+
+    <div class="content-grid">
+
+      <!-- Left column -->
+      <div class="col-main">
+
+        <!-- Items -->
+        <div class="card">
+          <h2 class="card-title">Order Items</h2>
+          <div class="table-wrapper">
+            <table class="items-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>SKU</th>
+                  <th>Size</th>
+                  <th>Color</th>
+                  <th>Qty</th>
+                  <th>Price</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of order.items">
+                  <td class="product-cell">
+                    <img *ngIf="item.image" [src]="item.image" [alt]="item.product_name" class="product-thumb" />
+                    <div>
+                      <div class="product-name">{{ item.product_name }}</div>
+                      <div class="product-brand">{{ item.brand }}</div>
+                    </div>
+                  </td>
+                  <td>{{ item.sku || '—' }}</td>
+                  <td>{{ item.size || '—' }}</td>
+                  <td>{{ item.color_name || '—' }}</td>
+                  <td>{{ item.quantity }}</td>
+                  <td>{{ formatAmount(item.price) }}</td>
+                  <td class="fw-600">{{ formatAmount(item.total) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Amount breakdown -->
+          <div class="amount-breakdown">
+            <div class="amount-row">
+              <span>Subtotal</span>
+              <span>{{ formatAmount(subtotal) }}</span>
+            </div>
+            <div class="amount-row">
+              <span>Delivery Fee</span>
+              <span>{{ formatAmount(deliveryFee) }}</span>
+            </div>
+            <div class="amount-row total">
+              <span>Grand Total</span>
+              <span>{{ formatAmount(order.total_amount) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shipping address -->
+        <div class="card">
+          <h2 class="card-title">Shipping Address</h2>
+          <div class="address-block">
+            <p class="address-type">{{ order.address_type || 'Address' }}</p>
+            <p>{{ fullAddress(order) }}</p>
+            <p *ngIf="order.landmark">Landmark: {{ order.landmark }}</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right column -->
+      <div class="col-side">
+
+        <!-- Update status -->
+        <div class="card">
+          <h2 class="card-title">Order Status</h2>
+          <div class="status-update-block">
+            <label class="field-label" for="statusSelect">Update status</label>
+            <select id="statusSelect" class="status-select" [(ngModel)]="selectedStatus">
+              <option *ngFor="let opt of statusOptions" [value]="opt.value">{{ opt.label }}</option>
+            </select>
+            <button
+              class="btn btn-primary btn-block"
+              [disabled]="updatingStatus || selectedStatus === order.order_status"
+              (click)="updateStatus()">
+              <span *ngIf="!updatingStatus">Update Status</span>
+              <span *ngIf="updatingStatus">Updating...</span>
+            </button>
+
+            <p class="status-msg success" *ngIf="statusUpdateSuccess">✓ Status updated successfully.</p>
+            <p class="status-msg error" *ngIf="statusUpdateError">{{ statusUpdateError }}</p>
+          </div>
+        </div>
+
+        <!-- Customer -->
+        <div class="card">
+          <h2 class="card-title">Customer</h2>
+          <div class="info-list">
+            <div class="info-row">
+              <span class="info-label">Name</span>
+              <span class="info-value">{{ order.user_name }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Email</span>
+              <span class="info-value">{{ order.user_email }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Phone</span>
+              <span class="info-value">{{ order.user_phone }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">User ID</span>
+              <span class="info-value">{{ order.user_id }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment / transaction -->
+        <div class="card" *ngIf="order.transaction">
+          <h2 class="card-title">Payment Details</h2>
+          <div class="info-list">
+            <div class="info-row">
+              <span class="info-label">Gateway</span>
+              <span class="info-value capitalize">{{ order.transaction.gateway || 'razorpay' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Razorpay Order ID</span>
+              <span class="info-value mono">{{ order.transaction.razorpay_order_id || '—' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Razorpay Payment ID</span>
+              <span class="info-value mono">{{ order.transaction.razorpay_payment_id || '—' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Transaction Status</span>
+              <span [ngClass]="paymentStatusClass(order.transaction.status)">{{ order.transaction.status }}</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </ng-container>
+</div>

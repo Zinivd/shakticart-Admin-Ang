@@ -1,0 +1,128 @@
+<div class="reels-page">
+  <div class="reels-header">
+    <h2>Reels Control</h2>
+    <button class="btn-primary" (click)="openCreateModal()">+ Add Reel</button>
+  </div>
+
+  <div *ngIf="loading" class="loading-text">Loading reels...</div>
+
+  <table class="reels-table" *ngIf="!loading">
+    <thead>
+      <tr>
+        <th>Video</th>
+        <th>Title</th>
+        <th>Product</th>
+        <th>Price</th>
+        <th>Category</th>
+        <th>Subcategory</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let reel of reels">
+        <td>
+          <video [src]="reel.video_url" class="reel-thumb" muted></video>
+        </td>
+        <td>{{ reel.title }}</td>
+        <td>{{ reel.product?.name || '-' }}</td>
+        <td>
+          <ng-container *ngIf="reel.product?.selling_price">
+            ₹{{ reel.product?.selling_price }}
+          </ng-container>
+        </td>
+        <td>{{ reel.product?.category?.category_name || '-' }}</td>
+        <td>{{ reel.product?.subcategory?.sub_category_name || '-' }}</td>
+        <td>
+          <label class="switch">
+            <input
+              type="checkbox"
+              [checked]="reel.is_published"
+              (change)="togglePublish(reel)"
+            />
+            <span class="slider"></span>
+          </label>
+        </td>
+        <td class="actions-cell">
+          <button class="btn-icon" (click)="openEditModal(reel)">Edit</button>
+          <button class="btn-icon danger" (click)="deleteReel(reel)">Delete</button>
+        </td>
+      </tr>
+      <tr *ngIf="!reels.length">
+        <td colspan="8" class="empty-row">No reels found</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+    <h3>{{ editingId ? 'Edit Reel' : 'Add Reel' }}</h3>
+
+    <label class="field-label">Title</label>
+    <input
+      type="text"
+      class="field-input"
+      [(ngModel)]="title"
+      placeholder="Enter reel title"
+    />
+
+    <label class="field-label">Product</label>
+    <div class="product-select-wrapper">
+      <div class="product-select-trigger" (click)="toggleProductDropdown()">
+        <ng-container *ngIf="selectedProduct; else noProduct">
+          <img [src]="productImage(selectedProduct)" class="product-select-img" />
+          <span>{{ selectedProduct.name }}</span>
+        </ng-container>
+        <ng-template #noProduct>
+          <span class="placeholder-text">Select a product</span>
+        </ng-template>
+        <span class="dropdown-arrow">▾</span>
+      </div>
+
+      <div class="product-dropdown-panel" *ngIf="showProductDropdown">
+        <input
+          type="text"
+          class="product-search-input"
+          placeholder="Search products..."
+          [(ngModel)]="productSearch"
+        />
+        <div class="product-dropdown-list">
+          <div
+            class="product-dropdown-item"
+            *ngFor="let p of filteredProducts"
+            (click)="selectProduct(p)"
+          >
+            <img [src]="productImage(p)" class="product-dropdown-img" />
+            <div class="product-dropdown-info">
+              <div class="product-dropdown-name">{{ p.name }}</div>
+              <div class="product-dropdown-price" *ngIf="p.selling_price">
+                ₹{{ p.selling_price }}
+              </div>
+            </div>
+          </div>
+          <div class="product-dropdown-empty" *ngIf="!filteredProducts.length">
+            No products found
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <label class="field-label">Video</label>
+    <input type="file" accept="video/*" (change)="onVideoSelected($event)" />
+    <video *ngIf="videoPreviewUrl" [src]="videoPreviewUrl" class="video-preview" controls></video>
+
+    <label class="field-label checkbox-row" *ngIf="!editingId">
+      <input type="checkbox" [(ngModel)]="isPublished" />
+      Publish immediately
+    </label>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" (click)="closeModal()">Cancel</button>
+      <button class="btn-primary" [disabled]="submitting" (click)="saveReel()">
+        {{ submitting ? 'Saving...' : (editingId ? 'Update Reel' : 'Create Reel') }}
+      </button>
+    </div>
+  </div>
+</div>

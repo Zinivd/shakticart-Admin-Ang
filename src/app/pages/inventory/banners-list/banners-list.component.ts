@@ -19,6 +19,7 @@ interface Banner {
   desktop_image: string;
   mobile_image: string;
   is_published: boolean;
+  is_active: boolean; // ✅ NEW
   created_at: string;
   updated_at: string;
 }
@@ -75,6 +76,11 @@ export class BannersListComponent implements OnInit {
   // togging publish state per-row (disable button while in flight)
   togglingIds: Set<number> = new Set();
 
+  // ✅ NEW — delete state
+  deletingIds: Set<number> = new Set();
+  showDeleteConfirm = false;
+  bannerToDelete: Banner | null = null;
+
   // ---------------- Add Banner modal ----------------
   showAddModal = false;
   savingBanner = false;
@@ -117,7 +123,7 @@ export class BannersListComponent implements OnInit {
     this.apiServices.getAllBanners<BannersResponse>().subscribe({
       next: (res: BannersResponse) => {
         // Laravel paginator: real data lives at res.data.data
-        // when the table is empty, "data" is [] and from/to are null — handle both
+        // API already filters to is_active = true, so this list is active banners only.
         const payload = res?.data;
         this.banners = payload?.data ?? [];
         this.filteredBanners = [...this.banners];
@@ -238,6 +244,47 @@ export class BannersListComponent implements OnInit {
   }
 
   // =====================================================================
+  // ========================= DELETE (soft) ================================
+  // =====================================================================
+  isDeleting(id: number): boolean {
+    return this.deletingIds.has(id);
+  }
+
+  openDeleteConfirm(banner: Banner): void {
+    this.bannerToDelete = banner;
+    this.showDeleteConfirm = true;
+  }
+
+  closeDeleteConfirm(): void {
+    this.showDeleteConfirm = false;
+    this.bannerToDelete = null;
+  }
+
+  confirmDeleteBanner(): void {
+    if (!this.bannerToDelete) return;
+    const banner = this.bannerToDelete;
+    if (this.deletingIds.has(banner.id)) return;
+
+    this.deletingIds.add(banner.id);
+    this.apiServices.deleteBanner(banner.id).subscribe({
+      next: () => {
+        this.deletingIds.delete(banner.id);
+        this.toastr.success(`"${banner.name}" deleted successfully.`);
+        // The API only ever returns active banners, so just drop it from the local lists.
+        this.banners = this.banners.filter(b => b.id !== banner.id);
+        this.filteredBanners = this.filteredBanners.filter(b => b.id !== banner.id);
+        this.closeDeleteConfirm();
+      },
+      error: (err: any) => {
+        console.log(err);
+        this.deletingIds.delete(banner.id);
+        this.toastr.error('Failed to delete banner.');
+        this.closeDeleteConfirm();
+      }
+    });
+  }
+
+  // =====================================================================
   // ========================= ADD BANNER MODAL ==============================
   // =====================================================================
   openAddBannerModal(): void {
@@ -319,7 +366,9 @@ export class BannersListComponent implements OnInit {
   }
   @HostListener('document:keydown.escape')
   onEscape(): void {
-    if (this.showPicker) {
+    if (this.showDeleteConfirm) {
+      this.closeDeleteConfirm();
+    } else if (this.showPicker) {
       this.closeImagePicker();
     } else if (this.showAddModal) {
       this.closeAddBannerModal();
@@ -360,7 +409,6 @@ export class BannersListComponent implements OnInit {
     return this.selectedLibraryId === file.id;
   }
   toggleLibrarySelect(file: LibraryFile): void {
-    // single-select for banner images (only 1 desktop / 1 mobile image needed)
     this.selectedLibraryId = this.selectedLibraryId === file.id ? null : file.id;
   }
   clearLibrarySelection(): void {
@@ -404,14 +452,9 @@ export class BannersListComponent implements OnInit {
     input.value = '';
   }
   processFiles(fileList: FileList): void {
-    // Accept every file in the drop/selection, not just the first one,
-    // and ADD to whatever is already pending instead of wiping it out —
-    // this is what makes multi-file drop/select actually work.
     const files = Array.from(fileList);
     if (!files.length) return;
-
     let skippedNonImage = false;
-
     files.forEach(file => {
       if (!file.type.startsWith('image/')) {
         skippedNonImage = true;
@@ -430,7 +473,6 @@ export class BannersListComponent implements OnInit {
       };
       reader.readAsDataURL(file);
     });
-
     if (skippedNonImage) {
       this.toastr.warning('Some files were skipped because they are not images.');
     }
@@ -457,13 +499,10 @@ export class BannersListComponent implements OnInit {
         );
         this.pendingFiles = [];
         this.loadLibraryFiles();
-
         if (uploaded.length === 1) {
-          // only one image — apply it straight to this desktop/mobile slot, same as before
           this.applyUrlToTarget(uploaded[0].file_url);
           this.closeImagePicker();
         } else if (uploaded.length > 1) {
-          // several images uploaded — let the user pick which one goes on this slot
           this.pickerTab = 'select';
         }
       },

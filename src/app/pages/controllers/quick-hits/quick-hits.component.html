@@ -1,0 +1,142 @@
+<div class="page-wrapper">
+  <div class="page-header">
+    <h1 class="page-title">Quick Hits</h1>
+    <button class="primary-btn" (click)="openAddModal()">+ Add Product</button>
+  </div>
+
+  <div class="card">
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:50px;">#</th>
+            <th style="width:60px;">Image</th>
+            <th>Product</th>
+            <th>Brand</th>
+            <th>Price</th>
+            <th>Position</th>
+            <th>Status</th>
+            <th class="action-col">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="loading">
+            <td colspan="8" class="empty-row">Loading Quick Hits...</td>
+          </tr>
+          <tr *ngIf="!loading && quickHits.length === 0">
+            <td colspan="8" class="empty-row">
+              No products in Quick Hits yet. Click "+ Add Product" to feature one on the home page.
+            </td>
+          </tr>
+          <tr *ngFor="let item of quickHits; let i = index; trackBy: trackByQuickHit">
+            <td>{{ i + 1 }}</td>
+            <td>
+              <img
+                *ngIf="productImage(item.product) as img"
+                [src]="img"
+                class="thumb"
+                [alt]="productName(item)" />
+              <span *ngIf="!productImage(item.product)" class="thumb-placeholder">—</span>
+            </td>
+            <td class="code-cell">{{ productName(item) }}</td>
+            <td>{{ item.product?.brand || '—' }}</td>
+            <td>{{ displayPrice(item.product) }}</td>
+            <td>
+              <div class="reorder-cell">
+                <button
+                  class="move-btn"
+                  [disabled]="i === 0 || movingId === item.product_id"
+                  (click)="moveUp(i)">▲</button>
+                <span class="position-num">{{ i + 1 }}</span>
+                <button
+                  class="move-btn"
+                  [disabled]="i === quickHits.length - 1 || movingId === item.product_id"
+                  (click)="moveDown(i)">▼</button>
+              </div>
+            </td>
+            <td><span [ngClass]="statusClass(item)">{{ item.is_active ? 'Active' : 'Inactive' }}</span></td>
+            <td class="action-col">
+              <div class="action-buttons">
+                <button
+                  class="toggle-btn"
+                  [class.approve]="!item.is_active"
+                  [class.unapprove]="item.is_active"
+                  [disabled]="togglingId === item.id"
+                  (click)="toggleActive(item)">
+                  <span *ngIf="togglingId !== item.id">{{ item.is_active ? 'Deactivate' : 'Activate' }}</span>
+                  <span *ngIf="togglingId === item.id" class="mini-spinner"></span>
+                </button>
+                <button
+                  class="remove-btn"
+                  [disabled]="removingId === item.id"
+                  (click)="removeQuickHit(item)">
+                  <span *ngIf="removingId !== item.id">Remove</span>
+                  <span *ngIf="removingId === item.id" class="mini-spinner"></span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Add Quick Hit Modal -->
+<div class="review-modal-backdrop" *ngIf="showAddModal" (click)="closeAddModal()">
+  <div class="review-modal" (click)="$event.stopPropagation()">
+    <div class="review-modal-header">
+      <h2>Add Product to Quick Hits</h2>
+      <button class="review-close-btn" (click)="closeAddModal()">&times;</button>
+    </div>
+    <div class="review-modal-body">
+      <div class="form-group product-select-group">
+        <label>Product</label>
+        <div class="product-dropdown">
+          <div class="product-dropdown-input" (click)="openProductDropdown()">
+            <input
+              type="text"
+              [(ngModel)]="productSearchTerm"
+              (ngModelChange)="onProductSearch()"
+              (focus)="openProductDropdown()"
+              (blur)="closeProductDropdownDelayed()"
+              [placeholder]="selectedProductLabel || 'Search product by name...'" />
+            <button
+              *ngIf="selectedProductId"
+              type="button"
+              class="clear-selection-btn"
+              (click)="clearProductSelection()">&times;</button>
+          </div>
+          <div class="product-dropdown-list" *ngIf="showProductDropdown">
+            <div *ngIf="loadingProducts" class="dropdown-empty">Loading products...</div>
+            <div *ngIf="!loadingProducts && filteredProducts.length === 0" class="dropdown-empty">
+              No available products found
+            </div>
+            <div
+              *ngFor="let product of filteredProducts"
+              class="dropdown-option"
+              [class.selected]="product.id === selectedProductId"
+              (mousedown)="selectProduct(product)">
+              <img
+                *ngIf="productImage(product) as img"
+                [src]="img"
+                class="option-thumb"
+                [alt]="productLabel(product)" />
+              <span class="option-name">{{ productLabel(product) }}</span>
+              <span class="option-id">ID: {{ product.id }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="selected-tag" *ngIf="selectedProductId && !showProductDropdown">
+          Selected: <strong>{{ selectedProductLabel }}</strong>
+        </div>
+      </div>
+    </div>
+    <div class="review-modal-footer">
+      <button class="secondary-btn" (click)="closeAddModal()">Cancel</button>
+      <button class="primary-btn" [disabled]="saving || !selectedProductId" (click)="submitAddQuickHit()">
+        {{ saving ? 'Saving...' : 'Add to Quick Hits' }}
+      </button>
+    </div>
+  </div>
+</div>

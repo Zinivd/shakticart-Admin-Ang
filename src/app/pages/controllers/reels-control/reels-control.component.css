@@ -1,0 +1,238 @@
+.reels-page {
+  padding: 24px;
+}
+.reels-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.btn-primary {
+  background: #e1712b;
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn-secondary {
+  background: #eee;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.reels-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+.reels-table th,
+.reels-table td {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+  font-size: 14px;
+}
+.reel-thumb {
+  width: 60px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: #111;
+}
+.actions-cell {
+  display: flex;
+  gap: 8px;
+}
+.btn-icon {
+  border: none;
+  background: #f2f2f2;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.btn-icon.danger {
+  background: #fde2e2;
+  color: #c0392b;
+}
+.empty-row {
+  text-align: center;
+  padding: 24px;
+  color: #888;
+}
+
+/* Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #ccc;
+  border-radius: 22px;
+  transition: 0.3s;
+}
+.slider::before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+.switch input:checked + .slider {
+  background-color: #e1712b;
+}
+.switch input:checked + .slider::before {
+  transform: translateX(18px);
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-box {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.field-label {
+  display: block;
+  margin-top: 14px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+.field-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.video-preview {
+  width: 100%;
+  margin-top: 10px;
+  border-radius: 8px;
+  max-height: 240px;
+  background: #000;
+}
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* Product dropdown */
+.product-select-wrapper {
+  position: relative;
+}
+.product-select-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.product-select-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+.placeholder-text {
+  color: #999;
+  font-size: 14px;
+}
+.dropdown-arrow {
+  margin-left: auto;
+  color: #888;
+}
+.product-dropdown-panel {
+  position: absolute;
+  top: 105%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  z-index: 20;
+  max-height: 280px;
+  display: flex;
+  flex-direction: column;
+}
+.product-search-input {
+  margin: 8px;
+  padding: 8px 10px;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.product-dropdown-list {
+  overflow-y: auto;
+}
+.product-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.product-dropdown-item:hover {
+  background: #f7f7f7;
+}
+.product-dropdown-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: #eee;
+}
+.product-dropdown-name {
+  font-size: 13px;
+  font-weight: 500;
+}
+.product-dropdown-price {
+  font-size: 12px;
+  color: #888;
+}
+.product-dropdown-empty {
+  padding: 16px;
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+}

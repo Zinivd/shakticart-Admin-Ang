@@ -4,19 +4,48 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiServicesService } from '../../../apiservice/api-services.service';
 
-interface OrderProduct {
+interface OrderItem {
+  id: number;
+  order_id: string;
+  shakti_product_id: number;
+  product_color_id: number;
+  inventory_id: number;
+  color_id: number;
   product_name: string;
+  brand: string;
+  color_name: string;
+  sku: string;
+  image: string;
+  quantity: number;
+  size: string;
+  price: string | number;
+  total: string | number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface Transaction {
+  id: number;
+  order_id: string;
+  razorpay_order_id: string;
+  razorpay_payment_id?: string | null;
+  status: string;
+  amount: string | number;
 }
 
 interface Order {
   id: number;
   order_id: string;
-  products?: OrderProduct[];
-  customer_name: string;
-  amount: number;
+  user_id: string;
+  user_name: string;
+  user_phone: string;
+  user_email: string;
+  items?: OrderItem[];
+  transaction?: Transaction;
   payment_mode: string;
   payment_status: string;
   order_status: string;
+  total_amount: string | number;
   created_at?: string;
 }
 
@@ -70,7 +99,7 @@ export class AllOrdersListComponent implements OnInit {
       ? [...this.orders]
       : this.orders.filter(o =>
           o.order_id?.toLowerCase().includes(term) ||
-          o.customer_name?.toLowerCase().includes(term) ||
+          o.user_name?.toLowerCase().includes(term) ||
           o.payment_status?.toLowerCase().includes(term) ||
           o.order_status?.toLowerCase().includes(term) ||
           o.payment_mode?.toLowerCase().includes(term)
@@ -133,18 +162,18 @@ export class AllOrdersListComponent implements OnInit {
   }
 
   productNames(order: Order): string {
-    if (!order.products || order.products.length === 0) return '—';
-    return order.products.map(p => p.product_name).join(', ');
+    if (!order.items || order.items.length === 0) return '—';
+    return order.items.map(i => i.product_name).join(', ');
   }
 
-  formatAmount(amount: number): string {
+  formatAmount(amount: string | number): string {
     if (amount == null) return '—';
     return '₹' + Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 2 });
   }
 
   paymentStatusClass(status: string): string {
     const s = (status || '').toLowerCase();
-    if (s === 'paid') return 'badge badge-success';
+    if (s === 'success' || s === 'paid') return 'badge badge-success';
     if (s === 'pending') return 'badge badge-warning';
     if (s === 'failed') return 'badge badge-danger';
     return 'badge badge-muted';
@@ -154,13 +183,15 @@ export class AllOrdersListComponent implements OnInit {
     const s = (status || '').toLowerCase();
     if (s === 'delivered') return 'badge badge-success';
     if (s === 'shipped') return 'badge badge-info';
-    if (s === 'processing' || s === 'pending') return 'badge badge-warning';
+    if (s === 'confirmed' || s === 'created' || s === 'processing' || s === 'pending') return 'badge badge-warning';
     if (s === 'cancelled') return 'badge badge-danger';
     return 'badge badge-muted';
   }
 
   // ---------------- Actions ----------------
   viewOrder(order: Order): void {
-    this.router.navigate(['/superadmin/orders/view', order.id]);
+    // ✅ navigate with order_id (string, e.g. ORD1786759598763) — the backend
+    // looks orders up by order_id, not the numeric primary key
+    this.router.navigate(['/superadmin/orders/view', order.order_id]);
   }
 }

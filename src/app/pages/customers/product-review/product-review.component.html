@@ -1,1 +1,195 @@
-<p>product-review works!</p>
+<div class="page-wrapper">
+  <div class="page-header">
+    <h1 class="page-title">Product Reviews</h1>
+    <button class="primary-btn" (click)="openAddModal()">+ Add Review</button>
+  </div>
+
+  <div class="card">
+    <!-- Filters -->
+    <div class="filters-row">
+      <div class="product-lookup">
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Enter Product ID..."
+          [(ngModel)]="productIdInput"
+          (keyup.enter)="loadReviews()" />
+        <button class="secondary-btn" (click)="loadReviews()">Load</button>
+      </div>
+
+      <select class="status-select" [(ngModel)]="statusFilter" (ngModelChange)="onStatusFilterChange()">
+        <option value="all">All Statuses</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+      </select>
+
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Search reviewer, title..."
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="onSearch()" />
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:50px;">#</th>
+            <th>REVIEW ID</th>
+            <th>REVIEWER</th>
+            <th>EMAIL</th>
+            <th>RATING</th>
+            <th>TITLE</th>
+            <th>TYPE</th>
+            <th>STATUS</th>
+            <th>DATE</th>
+            <th class="action-col">ACTION</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="!productId">
+            <td colspan="10" class="empty-row">Enter a Product ID and click Load to view its reviews</td>
+          </tr>
+          <tr *ngIf="productId && loading">
+            <td colspan="10" class="empty-row">Loading reviews...</td>
+          </tr>
+          <tr *ngIf="productId && !loading && pagedReviews.length === 0">
+            <td colspan="10" class="empty-row">No matching reviews found</td>
+          </tr>
+          <tr *ngFor="let review of pagedReviews; let i = index; trackBy: trackByReview">
+            <td>{{ (page - 1) * pageSize + i + 1 }}</td>
+            <td class="code-cell">{{ review.review_id }}</td>
+            <td>{{ reviewerName(review) }}</td>
+            <td>{{ reviewerEmail(review) }}</td>
+            <td>{{ review.rating }} / 5</td>
+            <td>{{ review.title || '—' }}</td>
+            <td><span [ngClass]="typeClass(review)">{{ review.is_admin ? 'Admin' : 'User' }}</span></td>
+            <td><span [ngClass]="statusClass(review)">{{ review.is_approved ? 'Approved' : 'Pending' }}</span></td>
+            <td>{{ formatDate(review.created_at) }}</td>
+            <td class="action-col">
+              <button
+                class="toggle-btn"
+                [class.approve]="!review.is_approved"
+                [class.unapprove]="review.is_approved"
+                [disabled]="approvingId === review.id"
+                (click)="toggleApproval(review)">
+                <span *ngIf="approvingId !== review.id">{{ review.is_approved ? 'Unapprove' : 'Approve' }}</span>
+                <span *ngIf="approvingId === review.id" class="mini-spinner"></span>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-bar" *ngIf="productId">
+      <div class="page-size">
+        <span>Rows per page</span>
+        <select [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="25">25</option>
+          <option [ngValue]="50">50</option>
+        </select>
+      </div>
+      <div class="page-info">Page {{ page }} of {{ totalPages }}</div>
+      <div class="page-controls">
+        <button class="page-btn" [disabled]="page === 1" (click)="goToPage(1)">«</button>
+        <button class="page-btn" [disabled]="page === 1" (click)="goToPage(page - 1)">Prev</button>
+        <ng-container *ngFor="let p of pageNumbers">
+          <button *ngIf="p !== '...'" class="page-btn number" [class.active]="p === page" (click)="goToPage(p)">
+            {{ p }}
+          </button>
+          <span *ngIf="p === '...'" class="dots">…</span>
+        </ng-container>
+        <button class="page-btn" [disabled]="page === totalPages" (click)="goToPage(page + 1)">Next</button>
+        <button class="page-btn" [disabled]="page === totalPages" (click)="goToPage(totalPages)">»</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Admin Review Modal -->
+<div class="review-modal-backdrop" *ngIf="showAddModal" (click)="closeAddModal()">
+  <div class="review-modal" (click)="$event.stopPropagation()">
+    <div class="review-modal-header">
+      <h2>Add Review</h2>
+      <button class="review-close-btn" (click)="closeAddModal()">&times;</button>
+    </div>
+    <div class="review-modal-body">
+      <div class="form-group product-select-group">
+        <label>Product</label>
+        <div class="product-dropdown">
+          <div class="product-dropdown-input" (click)="openProductDropdown()">
+            <input
+              type="text"
+              [(ngModel)]="productSearchTerm"
+              (ngModelChange)="onProductSearch()"
+              (focus)="openProductDropdown()"
+              (blur)="closeProductDropdownDelayed()"
+              [placeholder]="selectedProductLabel || 'Search product by name...'" />
+            <button
+              *ngIf="newReview.product_id"
+              type="button"
+              class="clear-selection-btn"
+              (click)="clearProductSelection()">&times;</button>
+          </div>
+
+          <div class="product-dropdown-list" *ngIf="showProductDropdown">
+            <div *ngIf="loadingProducts" class="dropdown-empty">Loading products...</div>
+            <div *ngIf="!loadingProducts && filteredProducts.length === 0" class="dropdown-empty">
+              No products found
+            </div>
+            <div
+              *ngFor="let product of filteredProducts"
+              class="dropdown-option"
+              [class.selected]="product.id === newReview.product_id"
+              (mousedown)="selectProduct(product)">
+              <span class="option-name">{{ productLabel(product) }}</span>
+              <span class="option-id">ID: {{ product.id }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="selected-tag" *ngIf="newReview.product_id && !showProductDropdown">
+          Selected: <strong>{{ selectedProductLabel }}</strong>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" [(ngModel)]="newReview.name" placeholder="Reviewer name" />
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" [(ngModel)]="newReview.email" placeholder="Reviewer email" />
+      </div>
+      <div class="form-group">
+        <label>Rating</label>
+        <select [(ngModel)]="newReview.rating">
+          <option [ngValue]="5">5 - Excellent</option>
+          <option [ngValue]="4">4 - Good</option>
+          <option [ngValue]="3">3 - Average</option>
+          <option [ngValue]="2">2 - Poor</option>
+          <option [ngValue]="1">1 - Bad</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Title</label>
+        <input type="text" [(ngModel)]="newReview.title" placeholder="Review title (optional)" />
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea rows="4" [(ngModel)]="newReview.description" placeholder="Review description (optional)"></textarea>
+      </div>
+    </div>
+    <div class="review-modal-footer">
+      <button class="secondary-btn" (click)="closeAddModal()">Cancel</button>
+      <button class="primary-btn" [disabled]="saving || !newReview.product_id" (click)="submitAdminReview()">
+        {{ saving ? 'Saving...' : 'Save Review' }}
+      </button>
+    </div>
+  </div>
+</div>

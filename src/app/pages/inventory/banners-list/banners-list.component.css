@@ -861,3 +861,85 @@ select.form-control {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+
+/* ---------- Delete button ---------- */
+.btn-delete {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--red);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.btn-delete:hover:not(:disabled) {
+  background: var(--red-bg);
+  border-color: var(--red);
+}
+.btn-delete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ---------- Delete confirm modal ---------- */
+.confirm-box {
+  background: #fff;
+  width: 100%;
+  max-width: 380px;
+  border-radius: 14px;
+  padding: 26px 24px;
+  text-align: center;
+}
+.confirm-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--red-bg);
+  color: var(--red);
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+}
+.confirm-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text-dark);
+  margin: 0 0 8px;
+}
+.confirm-text {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+.confirm-footer {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+.btn-danger {
+  background: var(--red);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+.btn-danger:hover:not(:disabled) {
+  background: #c9302f;
+}
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

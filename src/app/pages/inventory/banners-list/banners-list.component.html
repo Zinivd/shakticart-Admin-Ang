@@ -56,6 +56,11 @@
                                 <span class="publish-label" [class.published]="banner.is_published">
                                     {{ banner.is_published ? 'Published' : 'Draft' }}
                                 </span>
+                                <button type="button" class="btn-delete" title="Delete banner"
+                                    [disabled]="isDeleting(banner.id)" (click)="openDeleteConfirm(banner)">
+                                    <span *ngIf="!isDeleting(banner.id)">🗑</span>
+                                    <span *ngIf="isDeleting(banner.id)">...</span>
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -91,6 +96,28 @@
         </div>
     </div>
 </div>
+
+<!-- ================================================================== -->
+<!-- ========================= DELETE CONFIRM MODAL ======================== -->
+<!-- ================================================================== -->
+<div class="modal-overlay" *ngIf="showDeleteConfirm" (click)="closeDeleteConfirm()">
+    <div class="confirm-box" (click)="$event.stopPropagation()">
+        <div class="confirm-icon">🗑</div>
+        <h5 class="confirm-title">Delete Banner</h5>
+        <p class="confirm-text">
+            Are you sure you want to delete
+            <strong>{{ bannerToDelete?.name }}</strong>? It will be hidden from this list, but not permanently removed.
+        </p>
+        <div class="confirm-footer">
+            <button type="button" class="btn-secondary" (click)="closeDeleteConfirm()">Cancel</button>
+            <button type="button" class="btn-danger" [disabled]="bannerToDelete && isDeleting(bannerToDelete.id)"
+                (click)="confirmDeleteBanner()">
+                {{ bannerToDelete && isDeleting(bannerToDelete.id) ? 'Deleting...' : 'Delete' }}
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- ================================================================== -->
 <!-- ========================= ADD BANNER MODAL ============================ -->
 <!-- ================================================================== -->
@@ -162,6 +189,7 @@
         </div>
     </div>
 </div>
+
 <!-- ================================================================== -->
 <!-- =================== IMAGE PICKER MODAL (shared) ===================== -->
 <!-- ================================================================== -->
@@ -203,7 +231,6 @@
         <div class="picker-body" *ngIf="pickerTab === 'upload'">
             <div class="upload-dropzone" [class.drag-over]="dragOver" (dragover)="onDragOver($event)"
                 (dragleave)="onDragLeave()" (drop)="onDrop($event)">
-                <!-- input lives outside the ngIf now, so it's always available to add more files -->
                 <input type="file" id="pickerFileInput" accept="image/*" multiple class="file-input-hidden"
                     (change)="onFileInputChange($event)" />
                 <ng-container *ngIf="pendingFiles.length === 0">

@@ -65,7 +65,7 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
 
 
         ],
-       
+
     },
     {
         label: 'Inventory',
@@ -128,7 +128,35 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
             //     route: '/superadmin/customers/reviews',
             //     allowedRole: 'admin'
             // },
-            
+
+        ]
+    },
+    {
+        label: 'Controllers',
+        icon: 'bx bx-blocks',
+        activeIcon: 'bx bx-blocks',
+        allowedRole: 'admin',
+        keywords: ['customers', 'clients', 'users'],
+        children: [
+            {
+                label: 'Quick Hits',
+                icon: 'bx bx-megaphone',
+                route: '/superadmin/quick-hits',
+                allowedRole: 'admin'
+            },
+            {
+                label: 'Product Reviews',
+                icon: 'bx bx-user-circle',
+                route: '/superadmin/customers/reviews',
+                allowedRole: 'admin'
+            },
+            {
+                label: 'Reels Control',
+                icon: 'bx bx-user-circle',
+                route: '/superadmin/reels-control',
+                allowedRole: 'admin'
+            },
+
         ]
     }
 ];
