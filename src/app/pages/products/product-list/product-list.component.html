@@ -5,7 +5,6 @@
             <span class="plus">+</span> Add Product
         </button>
     </div>
-
     <div class="card">
         <!-- Search -->
         <div class="search-row">
@@ -13,7 +12,6 @@
                 (ngModelChange)="onSearch()" />
             <span class="result-count">{{ filteredProducts.length }} products</span>
         </div>
-
         <!-- ============ PRODUCT TABLE ============ -->
         <div class="table-wrapper">
             <table class="data-table">
@@ -31,15 +29,16 @@
                         <th>PRICE</th>
                         <th>TYPE</th>
                         <th>STATUS</th>
+                        <th>ACTIVE</th>
                         <th class="action-col">ACTION</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr *ngIf="loading">
-                        <td colspan="13" class="empty-row">Loading...</td>
+                        <td colspan="14" class="empty-row">Loading...</td>
                     </tr>
                     <tr *ngIf="!loading && pagedProducts.length === 0">
-                        <td colspan="13" class="empty-row">No matching records found</td>
+                        <td colspan="14" class="empty-row">No matching records found</td>
                     </tr>
                     <tr *ngFor="let prod of pagedProducts; let i = index; trackBy: trackByProduct">
                         <td>{{ (page - 1) * pageSize + i + 1 }}</td>
@@ -79,6 +78,16 @@
                                 {{ prod.is_published ? 'Published' : 'Draft' }}
                             </span>
                         </td>
+                        <!-- ✅ NEW — Active/Inactive toggle switch -->
+                        <td>
+                            <label class="switch" [class.disabled]="prod._togglingActive">
+                                <input type="checkbox"
+                                    [checked]="prod.is_active"
+                                    [disabled]="prod._togglingActive"
+                                    (click)="toggleProductActive(prod, $event)" />
+                                <span class="slider"></span>
+                            </label>
+                        </td>
                         <td class="action-col">
                             <button class="icon-btn view" (click)="viewProduct(prod)" title="View">👁</button>
                             <button class="icon-btn edit" (click)="editProduct(prod)" title="Edit">✎</button>
@@ -87,7 +96,6 @@
                 </tbody>
             </table>
         </div>
-
         <!-- ============ PAGINATION (client-side) ============ -->
         <div class="pagination-bar">
             <div class="page-size">

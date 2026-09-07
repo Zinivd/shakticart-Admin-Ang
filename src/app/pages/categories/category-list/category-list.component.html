@@ -37,15 +37,16 @@
                         <th>IMAGE</th>
                         <th>CATEGORY</th>
                         <th>SUBCATEGORY</th>
+                        <th>ACTIVE</th>
                         <th class="action-col">ACTION</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr *ngIf="!loading && pagedCategories.length === 0">
-                        <td colspan="6" class="empty-row">No matching records found</td>
+                        <td colspan="7" class="empty-row">No matching records found</td>
                     </tr>
                     <tr *ngIf="loading">
-                        <td colspan="6" class="empty-row">Loading...</td>
+                        <td colspan="7" class="empty-row">Loading...</td>
                     </tr>
                     <tr *ngFor="let cat of pagedCategories; let i = index; trackBy: trackByCategory">
                         <td>{{ (categoryPage - 1) * categoryPageSize + i + 1 }}</td>
@@ -59,6 +60,16 @@
                                 {{ sub.sub_category_name }}
                             </span>
                             <span class="muted" *ngIf="!cat.subcategories?.length">—</span>
+                        </td>
+                        <!-- ✅ NEW — Active/Inactive toggle switch -->
+                        <td>
+                            <label class="switch" [class.disabled]="cat._togglingActive">
+                                <input type="checkbox"
+                                    [checked]="cat.is_active"
+                                    [disabled]="cat._togglingActive"
+                                    (click)="toggleCategoryActive(cat, $event)" />
+                                <span class="slider"></span>
+                            </label>
                         </td>
                         <td class="action-col">
                             <button class="icon-btn edit" (click)="editCategory(cat)" title="Edit">✎</button>

@@ -46,6 +46,14 @@
             <td><span [ngClass]="orderStatusClass(order.order_status)">{{ order.order_status || '—' }}</span></td>
             <td class="action-col">
               <button class="icon-btn view" (click)="viewOrder(order)" title="View order">👁</button>
+              <button
+                class="icon-btn delete"
+                *ngIf="canDelete(order)"
+                [disabled]="deletingId === order.order_id"
+                (click)="deleteOrder(order)"
+                title="Delete order (only allowed while placed)">
+                {{ deletingId === order.order_id ? '…' : '🗑' }}
+              </button>
             </td>
           </tr>
         </tbody>

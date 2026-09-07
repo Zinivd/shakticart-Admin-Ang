@@ -18,15 +18,24 @@ interface Category {
   category_id: string;
   category_name: string;
   image: string;
+  is_active: boolean; // ✅ NEW
   created_at: string;
   updated_at: string;
   subcategories: SubCategory[];
+  // ✅ NEW — used only on the frontend while a toggle request is in-flight
+  _togglingActive?: boolean;
 }
 type TabKey = 'category' | 'subcategory';
 
 // row model for the dynamic subcategory-name inputs in the Add modal
 interface SubCategoryRow {
   sub_category_name: string;
+}
+
+interface ToggleActiveResponse {
+  success: boolean;
+  message: string;
+  data: { category_id: string; is_active: boolean };
 }
 
 @Component({
@@ -103,7 +112,9 @@ export class CategoryListComponent implements OnInit {
   // ---------------- Data fetching ----------------
   getAllCategories(): void {
     this.loading = true;
-    this.apiServices.getAllCategories().subscribe({
+    // ✅ NEW — admin endpoint returns ALL categories (active + inactive)
+    // so the admin can see and re-activate hidden ones too.
+    this.apiServices.getAllCategoriesAdmin().subscribe({
       next: (res: any) => {
         this.categories = res?.data ?? [];
         this.applyFilter();
@@ -115,7 +126,6 @@ export class CategoryListComponent implements OnInit {
       }
     });
   }
-
   getAllSubCategories(): void {
     this.apiServices.getAllSubCategories().subscribe({
       next: (res: any) => {
@@ -140,7 +150,6 @@ export class CategoryListComponent implements OnInit {
   onSearch(): void {
     this.applyFilter();
   }
-
   applyFilter(): void {
     const term = this.searchTerm.trim().toLowerCase();
     if (this.activeTab === 'category') {
@@ -162,7 +171,6 @@ export class CategoryListComponent implements OnInit {
       this.subCategoryPage = 1;
     }
   }
-
   getCategoryName(categoryId: string): string {
     const match = this.categories.find(c => c.category_id === categoryId);
     return match ? match.category_name : '—';
@@ -249,6 +257,30 @@ export class CategoryListComponent implements OnInit {
     console.log('Delete subcategory', item);
   }
 
+  // ---------------- ✅ NEW — Active / Inactive toggle ----------------
+  toggleCategoryActive(cat: Category, event: Event): void {
+    event.stopPropagation();
+    if (cat._togglingActive) return;
+
+    const previous = cat.is_active;
+    cat._togglingActive = true;
+    // optimistic UI update
+    cat.is_active = !cat.is_active;
+
+    this.apiServices.toggleCategoryActive<ToggleActiveResponse>(cat.category_id).subscribe({
+      next: (res) => {
+        cat.is_active = res?.data?.is_active ?? cat.is_active;
+        cat._togglingActive = false;
+      },
+      error: (err: any) => {
+        console.log(err);
+        // revert on failure
+        cat.is_active = previous;
+        cat._togglingActive = false;
+      }
+    });
+  }
+
   // =====================================================================
   // ============== ADD CATEGORY MODAL (formdata: name + image) ==========
   // =====================================================================
@@ -291,7 +323,6 @@ export class CategoryListComponent implements OnInit {
     const formData = new FormData();
     formData.append('category_name', this.newCategoryName.trim());
     formData.append('image', this.newCategoryImageFile);
-
     this.savingCategory = true;
     this.apiServices.addcategory(formData).subscribe({
       next: (res: any) => {
@@ -370,13 +401,11 @@ export class CategoryListComponent implements OnInit {
     this.editCategoryImagePreview = item.image || null; // show current image
     this.editCategoryFormError = '';
     this.updatingCategory = false;
-
     if (!this.editCategoryModalInstance) {
       this.editCategoryModalInstance = new bootstrap.Modal(this.editCategoryModalRef.nativeElement);
     }
     this.editCategoryModalInstance.show();
   }
-
   onEditCategoryImageSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files && input.files.length ? input.files[0] : null;
@@ -388,19 +417,16 @@ export class CategoryListComponent implements OnInit {
     };
     reader.readAsDataURL(file);
   }
-
   removeEditCategoryImage(): void {
     this.editCategoryImageFile = null;
     this.editCategoryImagePreview = null;
   }
-
   submitEditCategory(): void {
     this.editCategoryFormError = '';
     if (!this.editCategoryName.trim()) {
       this.editCategoryFormError = 'Category name is required.';
       return;
     }
-
     const formData = new FormData();
     formData.append('category_id', this.editCategoryId);
     formData.append('category_name', this.editCategoryName.trim());
@@ -409,7 +435,6 @@ export class CategoryListComponent implements OnInit {
     if (this.editCategoryImageFile) {
       formData.append('image', this.editCategoryImageFile);
     }
-
     this.updatingCategory = true;
     this.apiServices.UpdateCategory(formData).subscribe({
       next: (res: any) => {
@@ -434,20 +459,17 @@ export class CategoryListComponent implements OnInit {
     this.editSubCategoryName = item.sub_category_name;
     this.editSubCategoryFormError = '';
     this.updatingSubCategory = false;
-
     if (!this.editSubCategoryModalInstance) {
       this.editSubCategoryModalInstance = new bootstrap.Modal(this.editSubCategoryModalRef.nativeElement);
     }
     this.editSubCategoryModalInstance.show();
   }
-
   submitEditSubCategory(): void {
     this.editSubCategoryFormError = '';
     if (!this.editSubCategoryName.trim()) {
       this.editSubCategoryFormError = 'Subcategory name is required.';
       return;
     }
-
     // API expects an array under the parent category_id, even for a single edit
     const payload = {
       category_id: this.editSubCategoryParentId,
@@ -458,7 +480,6 @@ export class CategoryListComponent implements OnInit {
         }
       ]
     };
-
     this.updatingSubCategory = true;
     this.apiServices.UpdateSubCategory(payload).subscribe({
       next: (res: any) => {

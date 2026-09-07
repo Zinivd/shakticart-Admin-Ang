@@ -3,7 +3,6 @@
     <h1 class="page-title">Product Reviews</h1>
     <button class="primary-btn" (click)="openAddModal()">+ Add Review</button>
   </div>
-
   <div class="card">
     <!-- Filters -->
     <div class="filters-row">
@@ -11,24 +10,34 @@
         <input
           type="text"
           class="search-input"
-          placeholder="Enter Product ID..."
+          placeholder="Enter Product ID (leave blank for all)..."
           [(ngModel)]="productIdInput"
-          (keyup.enter)="loadReviews()" />
+          (keyup.enter)="onProductIdKeyEnter()" />
         <button class="secondary-btn" (click)="loadReviews()">Load</button>
+        <button
+          *ngIf="productIdInput"
+          class="secondary-btn"
+          type="button"
+          (click)="clearProductFilter()">
+          Clear
+        </button>
       </div>
-
       <select class="status-select" [(ngModel)]="statusFilter" (ngModelChange)="onStatusFilterChange()">
         <option value="all">All Statuses</option>
         <option value="pending">Pending</option>
         <option value="approved">Approved</option>
       </select>
-
       <input
         type="text"
         class="search-input"
         placeholder="Search reviewer, title..."
         [(ngModel)]="searchTerm"
         (ngModelChange)="onSearch()" />
+    </div>
+
+    <!-- Error banner -->
+    <div class="error-banner" *ngIf="loadError">
+      {{ loadError }}
     </div>
 
     <!-- Table -->
@@ -38,6 +47,7 @@
           <tr>
             <th style="width:50px;">#</th>
             <th>REVIEW ID</th>
+            <th>PRODUCT ID</th>
             <th>REVIEWER</th>
             <th>EMAIL</th>
             <th>RATING</th>
@@ -49,18 +59,16 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngIf="!productId">
-            <td colspan="10" class="empty-row">Enter a Product ID and click Load to view its reviews</td>
+          <tr *ngIf="loading">
+            <td colspan="11" class="empty-row">Loading reviews...</td>
           </tr>
-          <tr *ngIf="productId && loading">
-            <td colspan="10" class="empty-row">Loading reviews...</td>
-          </tr>
-          <tr *ngIf="productId && !loading && pagedReviews.length === 0">
-            <td colspan="10" class="empty-row">No matching reviews found</td>
+          <tr *ngIf="!loading && hasLoadedOnce && !loadError && pagedReviews.length === 0">
+            <td colspan="11" class="empty-row">No matching reviews found</td>
           </tr>
           <tr *ngFor="let review of pagedReviews; let i = index; trackBy: trackByReview">
             <td>{{ (page - 1) * pageSize + i + 1 }}</td>
             <td class="code-cell">{{ review.review_id }}</td>
+            <td>{{ review.product_id }}</td>
             <td>{{ reviewerName(review) }}</td>
             <td>{{ reviewerEmail(review) }}</td>
             <td>{{ review.rating }} / 5</td>
@@ -85,7 +93,7 @@
     </div>
 
     <!-- Pagination -->
-    <div class="pagination-bar" *ngIf="productId">
+    <div class="pagination-bar" *ngIf="hasLoadedOnce && filteredReviews.length > 0">
       <div class="page-size">
         <span>Rows per page</span>
         <select [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
@@ -137,7 +145,6 @@
               class="clear-selection-btn"
               (click)="clearProductSelection()">&times;</button>
           </div>
-
           <div class="product-dropdown-list" *ngIf="showProductDropdown">
             <div *ngIf="loadingProducts" class="dropdown-empty">Loading products...</div>
             <div *ngIf="!loadingProducts && filteredProducts.length === 0" class="dropdown-empty">
@@ -157,7 +164,6 @@
           Selected: <strong>{{ selectedProductLabel }}</strong>
         </div>
       </div>
-
       <div class="form-group">
         <label>Name</label>
         <input type="text" [(ngModel)]="newReview.name" placeholder="Reviewer name" />

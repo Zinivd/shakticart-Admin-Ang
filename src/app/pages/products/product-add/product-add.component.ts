@@ -49,7 +49,7 @@ interface PendingUpload {
 }
 type PickerTarget = 'main' | number; // 'main' or variant index
 type PickerTab = 'select' | 'upload';
-const ALL_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+const ALL_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'One Size'];
 const PRODUCT_LIST_TYPES = [
   { value: 'trending_now', label: 'Trending now' },
   { value: 'best_sellers', label: 'Best sellers' },

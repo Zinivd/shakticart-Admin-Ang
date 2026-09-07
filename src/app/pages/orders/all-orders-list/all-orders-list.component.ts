@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiServicesService } from '../../../apiservice/api-services.service';
-
 interface OrderItem {
   id: number;
   order_id: string;
@@ -23,7 +22,6 @@ interface OrderItem {
   created_at?: string;
   updated_at?: string;
 }
-
 interface Transaction {
   id: number;
   order_id: string;
@@ -32,7 +30,6 @@ interface Transaction {
   status: string;
   amount: string | number;
 }
-
 interface Order {
   id: number;
   order_id: string;
@@ -48,7 +45,6 @@ interface Order {
   total_amount: string | number;
   created_at?: string;
 }
-
 @Component({
   selector: 'app-all-orders-list',
   standalone: true,
@@ -60,22 +56,18 @@ export class AllOrdersListComponent implements OnInit {
   orders: Order[] = [];
   filteredOrders: Order[] = [];
   loading = false;
-  deletingId: number | null = null;
+  deletingId: string | null = null;
   searchTerm = '';
-
   // pagination state
   page = 1;
   pageSize = 10;
-
   constructor(
     private apiServices: ApiServicesService,
     private router: Router
   ) { }
-
   ngOnInit(): void {
     this.getAllOrders();
   }
-
   // ---------------- Data fetching ----------------
   getAllOrders(): void {
     this.loading = true;
@@ -91,7 +83,6 @@ export class AllOrdersListComponent implements OnInit {
       }
     });
   }
-
   // ---------------- Search ----------------
   onSearch(): void {
     const term = this.searchTerm.trim().toLowerCase();
@@ -106,37 +97,30 @@ export class AllOrdersListComponent implements OnInit {
         );
     this.page = 1;
   }
-
   // ---------------- Pagination ----------------
   get pagedOrders(): Order[] {
     const start = (this.page - 1) * this.pageSize;
     return this.filteredOrders.slice(start, start + this.pageSize);
   }
-
   get totalPages(): number {
     return Math.max(1, Math.ceil(this.filteredOrders.length / this.pageSize));
   }
-
   get pageNumbers(): (number | string)[] {
     return this.buildPageNumbers(this.page, this.totalPages);
   }
-
   goToPage(p: number | string): void {
     if (typeof p !== 'number') return;
     if (p < 1 || p > this.totalPages) return;
     this.page = p;
   }
-
   onPageSizeChange(): void {
     this.page = 1;
   }
-
   private buildPageNumbers(current: number, total: number): (number | string)[] {
     const delta = 1;
     const range: number[] = [];
     const withDots: (number | string)[] = [];
     let last: number | undefined;
-
     for (let i = 1; i <= total; i++) {
       if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) {
         range.push(i);
@@ -155,22 +139,18 @@ export class AllOrdersListComponent implements OnInit {
     }
     return withDots;
   }
-
   // ---------------- Helpers ----------------
   trackByOrder(index: number, item: Order): number {
     return item.id;
   }
-
   productNames(order: Order): string {
     if (!order.items || order.items.length === 0) return '—';
     return order.items.map(i => i.product_name).join(', ');
   }
-
   formatAmount(amount: string | number): string {
     if (amount == null) return '—';
     return '₹' + Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 2 });
   }
-
   paymentStatusClass(status: string): string {
     const s = (status || '').toLowerCase();
     if (s === 'success' || s === 'paid') return 'badge badge-success';
@@ -178,7 +158,6 @@ export class AllOrdersListComponent implements OnInit {
     if (s === 'failed') return 'badge badge-danger';
     return 'badge badge-muted';
   }
-
   orderStatusClass(status: string): string {
     const s = (status || '').toLowerCase();
     if (s === 'delivered') return 'badge badge-success';
@@ -187,11 +166,48 @@ export class AllOrdersListComponent implements OnInit {
     if (s === 'cancelled') return 'badge badge-danger';
     return 'badge badge-muted';
   }
-
+  // ✅ Only a freshly placed order (order_status === 'CREATED') can be deleted
+  canDelete(order: Order): boolean {
+    return (order.order_status || '').toUpperCase() === 'CREATED';
+  }
   // ---------------- Actions ----------------
   viewOrder(order: Order): void {
     // ✅ navigate with order_id (string, e.g. ORD1786759598763) — the backend
     // looks orders up by order_id, not the numeric primary key
     this.router.navigate(['/superadmin/orders/view', order.order_id]);
+  }
+  deleteOrder(order: Order): void {
+    if (!this.canDelete(order)) {
+      return;
+    }
+    const confirmed = window.confirm(
+      `Delete order ${order.order_id}? This will restore stock for its items and cannot be undone.`
+    );
+    if (!confirmed) {
+      return;
+    }
+    this.deletingId = order.order_id;
+    this.apiServices.deleteOrder(order.order_id).subscribe({
+      next: (res: any) => {
+        this.deletingId = null;
+        if (res?.success === false) {
+          alert(res?.message || 'Failed to delete order.');
+          return;
+        }
+        // Remove from local lists without a full refetch
+        this.orders = this.orders.filter(o => o.order_id !== order.order_id);
+        this.filteredOrders = this.filteredOrders.filter(o => o.order_id !== order.order_id);
+        // keep pagination valid if last item on a page was removed
+        if (this.page > this.totalPages) {
+          this.page = this.totalPages;
+        }
+      },
+      error: (err: any) => {
+        this.deletingId = null;
+        const msg = err?.error?.error?.message || err?.error?.message || 'Failed to delete order.';
+        alert(msg);
+        console.log(err);
+      }
+    });
   }
 }

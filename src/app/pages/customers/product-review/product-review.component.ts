@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { ApiServicesService } from '../../../apiservice/api-services.service';
 
 interface ReviewUser {
@@ -9,7 +10,6 @@ interface ReviewUser {
   email?: string;
   unique_id?: string;
 }
-
 interface Review {
   id: number;
   review_id: string;
@@ -25,13 +25,11 @@ interface Review {
   created_at?: string;
   user?: ReviewUser;
 }
-
 interface Product {
   id: number;
   name?: string;
   brand?: string;
 }
-
 interface NewAdminReview {
   product_id: number | null;
   name: string;
@@ -39,6 +37,11 @@ interface NewAdminReview {
   rating: number;
   title: string;
   description: string;
+}
+interface ReviewsApiResponse {
+  success: boolean;
+  count?: number;
+  data: Review[];
 }
 
 @Component({
@@ -48,16 +51,15 @@ interface NewAdminReview {
   templateUrl: './product-review.component.html',
   styleUrl: './product-review.component.css'
 })
-export class ProductReviewComponent implements OnInit {
+export class ProductReviewComponent implements OnInit, OnDestroy {
   productId = '';
   productIdInput = '';
-
   reviews: Review[] = [];
   filteredReviews: Review[] = [];
-
   loading = false;
+  hasLoadedOnce = false;
+  loadError = '';
   approvingId: number | null = null;
-
   searchTerm = '';
   statusFilter: 'all' | 'approved' | 'pending' = 'all';
 
@@ -85,44 +87,101 @@ export class ProductReviewComponent implements OnInit {
   showProductDropdown = false;
   selectedProductLabel = '';
 
+  private routeSub?: Subscription;
+  private queryParamSub?: Subscription;
+
   constructor(
     private apiServices: ApiServicesService,
     private route: ActivatedRoute
   ) { }
 
   ngOnInit(): void {
-    const routeProductId = this.route.snapshot.paramMap.get('product_id');
-    if (routeProductId) {
-      this.productId = routeProductId;
-      this.productIdInput = routeProductId;
+    // ✅ Tracks whether a route/query param already triggered a load,
+    // so we don't fire loadReviews() twice on init.
+    let initialLoadDone = false;
+
+    // Subscribe reactively instead of reading snapshot once. This covers:
+    //  1) the route param not existing
+    //  2) Angular reusing this component instance when navigating from one
+    //     product's review page to another's
+    this.routeSub = this.route.paramMap.subscribe(params => {
+      const routeProductId =
+        params.get('product_id') ||
+        params.get('productId') ||
+        params.get('id');
+
+      if (routeProductId) {
+        this.productId = routeProductId;
+        this.productIdInput = routeProductId;
+        initialLoadDone = true;
+        this.loadReviews();
+      }
+    });
+
+    // Also support ?product_id=123 as a query param
+    this.queryParamSub = this.route.queryParamMap.subscribe(params => {
+      const qpProductId = params.get('product_id');
+      if (qpProductId && !this.productIdInput) {
+        this.productIdInput = qpProductId;
+        initialLoadDone = true;
+        this.loadReviews();
+      }
+    });
+
+    // ✅ No product id anywhere (route param or query param) -> load ALL reviews
+    if (!initialLoadDone) {
       this.loadReviews();
     }
   }
 
+  ngOnDestroy(): void {
+    this.routeSub?.unsubscribe();
+    this.queryParamSub?.unsubscribe();
+  }
+
   // ---------------- Data fetching ----------------
   loadReviews(): void {
-    if (!this.productIdInput.trim()) {
-      return;
-    }
+    this.loadError = '';
     this.productId = this.productIdInput.trim();
     this.loading = true;
+
     const status = this.statusFilter === 'all' ? undefined : this.statusFilter;
-    this.apiServices.getAdminReviews(this.productId, status).subscribe({
-      next: (res: any) => {
+
+    // ✅ If productId is empty, pass undefined so the service hits the
+    // "all reviews" endpoint instead of one scoped to a product id.
+    this.apiServices.getAdminReviews<ReviewsApiResponse>(this.productId || undefined, status).subscribe({
+      next: (res) => {
         this.reviews = res?.data || [];
         this.applyFilters();
         this.loading = false;
+        this.hasLoadedOnce = true;
       },
       error: (err: any) => {
         console.log(err);
         this.reviews = [];
         this.filteredReviews = [];
         this.loading = false;
+        this.hasLoadedOnce = true;
+        this.loadError = err?.error?.error?.message
+          || err?.error?.message
+          || 'Failed to load reviews. Please try again.';
       }
     });
   }
 
+  // lets the input's (keyup.enter) trigger a load without a page reload
+  onProductIdKeyEnter(): void {
+    this.loadReviews();
+  }
+
   onStatusFilterChange(): void {
+    this.page = 1;
+    this.loadReviews();
+  }
+
+  // ✅ NEW — lets the UI clear the product filter and reload all reviews
+  clearProductFilter(): void {
+    this.productIdInput = '';
     this.page = 1;
     this.loadReviews();
   }
@@ -131,7 +190,6 @@ export class ProductReviewComponent implements OnInit {
   onSearch(): void {
     this.applyFilters();
   }
-
   private applyFilters(): void {
     const term = this.searchTerm.trim().toLowerCase();
     this.filteredReviews = !term
@@ -214,7 +272,7 @@ export class ProductReviewComponent implements OnInit {
   toggleApproval(review: Review): void {
     const nextState = !review.is_approved;
     this.approvingId = review.id;
-    this.apiServices.approveReview(review.id, nextState).subscribe({
+    this.apiServices.approveReview<any>(review.id, nextState).subscribe({
       next: () => {
         review.is_approved = nextState;
         this.approvingId = null;
@@ -248,7 +306,7 @@ export class ProductReviewComponent implements OnInit {
       return;
     }
     this.saving = true;
-    this.apiServices.addAdminReview(this.newReview).subscribe({
+    this.apiServices.addAdminReview<any>(this.newReview).subscribe({
       next: () => {
         this.saving = false;
         this.showAddModal = false;
@@ -266,7 +324,7 @@ export class ProductReviewComponent implements OnInit {
   loadProducts(): void {
     if (this.allProducts.length) return; // already loaded, don't refetch every open
     this.loadingProducts = true;
-    this.apiServices.getAllProducts().subscribe({
+    this.apiServices.getAllProducts<any>().subscribe({
       next: (res: any) => {
         const list = res?.data?.data || res?.data || res || [];
         this.allProducts = Array.isArray(list) ? list : [];
@@ -281,23 +339,18 @@ export class ProductReviewComponent implements OnInit {
       }
     });
   }
-
   productLabel(product: Product): string {
     return product.name || `Product #${product.id}`;
   }
-
   openProductDropdown(): void {
     this.showProductDropdown = true;
     if (!this.allProducts.length) {
       this.loadProducts();
     }
   }
-
   closeProductDropdownDelayed(): void {
-    // delay so a click on an option registers before the dropdown closes
     setTimeout(() => (this.showProductDropdown = false), 150);
   }
-
   onProductSearch(): void {
     const term = this.productSearchTerm.trim().toLowerCase();
     this.filteredProducts = !term
@@ -306,7 +359,6 @@ export class ProductReviewComponent implements OnInit {
           this.productLabel(p).toLowerCase().includes(term)
         );
   }
-
   selectProduct(product: Product): void {
     this.newReview.product_id = product.id;
     this.selectedProductLabel = `${this.productLabel(product)} (ID: ${product.id})`;
@@ -314,7 +366,6 @@ export class ProductReviewComponent implements OnInit {
     this.filteredProducts = [...this.allProducts];
     this.showProductDropdown = false;
   }
-
   clearProductSelection(): void {
     this.newReview.product_id = null;
     this.selectedProductLabel = '';

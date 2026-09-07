@@ -1,67 +1,74 @@
 import { Injectable } from '@angular/core';
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class EndpointsService {
-  constructor() { }
+  constructor() {}
   // login
-  public loginApi = 'login'
-  public logoutApi = 'logout'
+  public loginApi = 'login';
+  public logoutApi = 'logout';
   // User info
-  public getUserInfo = 'user/info'
+  public getUserInfo = 'user/info';
   // categories
-  public getAllCategories = 'category/all'
-  public getAllSubCategories = 'subcategories'
-  public addcategory = 'category/create'
-  public addsubcategory = 'subcategory/create'
-  public UpdateCategory = 'category/update'
-  public UpdateSubCategory = 'subcategories/update'
+  public getAllCategories = 'category/all';
+  public getAllSubCategories = 'subcategories';
+  public addcategory = 'category/create';
+  public addsubcategory = 'subcategory/create';
+  public UpdateCategory = 'category/update';
+  public UpdateSubCategory = 'subcategories/update';
   // colors
-  public getAllColors = 'colors'
-  public addColor = 'colors'
-  public deleteColor = 'colors'
+  public getAllColors = 'colors';
+  public addColor = 'colors';
+  public deleteColor = 'colors';
   // products
-  public getAllProducts = 'admin/shakti-products'
-  public AddProduct = 'admin/shakti-products'
+  public getAllProducts = 'admin/shakti-products';
+  public AddProduct = 'admin/shakti-products';
   // orders
-  public getAllOrders = 'admin/orders'
-  public getOrderDetails = 'admin/orders/details'
+  public getAllOrders = 'admin/orders';
+  public getOrderDetails = 'admin/orders/details';
   // Customers
-  public getAllCustomers = 'customers-list'
+  public getAllCustomers = 'customers-list';
   // upload files
   public imageUpload = 'media/upload';
   public imagegetAll = 'media';
   public imageDelete = 'media';
   // banners
-  public createbanners = 'admin/banners'
-  public getAllBanners = 'admin/banners'
-  public publishBanners = 'admin/banners'
+  public createbanners = 'admin/banners';
+  public getAllBanners = 'admin/banners';
+  public publishBanners = 'admin/banners';
   // inventory / stock  ✅ NEW
-  public stockBase = 'admin/shakti-products'
+  public stockBase = 'admin/shakti-products';
   // product reviews (admin) ✅ NEW
-  public getAdminReviews = 'admin/product/reviews'   // GET  /{product_id}?status=
-  public addAdminReview = 'admin/product/review'     // POST
-  public approveReview = 'admin/product/review'      // PUT  /{id}/approve
+  public getAdminReviews = 'admin/product/reviews'; // GET  /{product_id}?status=
+  public addAdminReview = 'admin/product/review'; // POST
+  public approveReview = 'admin/product/review'; // PUT  /{id}/approve
   // quick hits (admin) ✅ NEW
-  public getQuickHitsAdmin = 'admin/quick-hits/list'   // GET
-  public addQuickHit = 'admin/quick-hits/add'          // POST { product_id, position? }
-  public removeQuickHit = 'admin/quick-hits/remove'    // POST { product_id }
-  public toggleQuickHit = 'admin/quick-hits/toggle'    // POST { product_id, is_active }
-  public reorderQuickHits = 'admin/quick-hits/reorder' // POST { order: [{product_id, position}] }
+  public getQuickHitsAdmin = 'admin/quick-hits/list'; // GET
+  public addQuickHit = 'admin/quick-hits/add'; // POST { product_id, position? }
+  public removeQuickHit = 'admin/quick-hits/remove'; // POST { product_id }
+  public toggleQuickHit = 'admin/quick-hits/toggle'; // POST { product_id, is_active }
+  public reorderQuickHits = 'admin/quick-hits/reorder'; // POST { order: [{product_id, position}] }
   // reels (admin) ✅ NEW
-  public createReel = 'reel/create'           // POST (FormData)
-  public updateReel = 'reel/update'           // POST (FormData)
-  public updateReelStatus = 'reel/update-status' // POST { id, is_published }
-  public deleteReel = 'reel/delete'           // POST { id }
-  public getAllReels = 'reel/all'             // GET
+  public createReel = 'reel/create'; // POST (FormData)
+  public updateReel = 'reel/update'; // POST (FormData)
+  public updateReelStatus = 'reel/update-status'; // POST { id, is_published }
+  public deleteReel = 'reel/delete'; // POST { id }
+  public getAllReels = 'reel/all'; // GET
 
-
-    // banners
+  // banners
   // public createbanners = 'admin/banners'
   // public getAllBanners = 'admin/banners'
   // public publishBanners = 'admin/banners'
-  public deleteBanner = 'admin/banners'   // ✅ NEW — DELETE /admin/banners/{id}
+  public deleteBanner = 'admin/banners'; // ✅ NEW — DELETE /admin/banners/{id}
 
-  getOrderByOrderId= 'orders_byorderId'
-updateOrderStatus= 'order/update-status'
+  getOrderByOrderId = 'orders_byorderId';
+  updateOrderStatus = 'order/update-status';
+  public deleteOrder = 'admin/order/delete'; // ✅ NEW — DELETE /admin/order/delete { order_id }
+
+  // categories (admin) ✅ NEW
+  public getAllCategoriesAdmin = 'admin/category/all'; // GET (includes inactive)
+  public toggleCategoryActive = 'admin/category'; // PATCH /{category_id}/active
+
+  // products (admin) ✅ NEW
+  public toggleProductActive = 'admin/shakti-products'; // PATCH /{id}/active
 }

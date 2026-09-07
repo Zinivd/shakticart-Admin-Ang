@@ -12,13 +12,11 @@ interface Inventory {
   price: string;
   stock: number;
 }
-
 interface ColorRef {
   id: number;
   name: string;
   code: string;
 }
-
 interface ProductColor {
   id: number;
   product_id: number;
@@ -27,21 +25,18 @@ interface ProductColor {
   color: ColorRef;
   inventories: Inventory[];
 }
-
 interface CategoryRef {
   id: number;
   category_id: string;
   category_name: string;
   image: string;
 }
-
 interface SubCategoryRef {
   id: number;
   sub_category_id: string;
   sub_category_name: string;
   category_id: string;
 }
-
 interface Product {
   id: number;
   name: string;
@@ -55,13 +50,15 @@ interface Product {
   product_list_type: string; // 'trending_now' | 'best_sellers' | 'top_offers'
   images: string[];
   is_published: boolean;
+  is_active: boolean; // ✅ NEW
   created_at: string;
   updated_at: string;
   category: CategoryRef;
   subcategory: SubCategoryRef;
   colors: ProductColor[];
+  // ✅ NEW — used only on the frontend while a toggle request is in-flight
+  _togglingActive?: boolean;
 }
-
 interface PaginatedPayload {
   current_page: number;
   data: Product[];
@@ -71,10 +68,14 @@ interface PaginatedPayload {
   from: number;
   to: number;
 }
-
 interface ProductsResponse {
   success: boolean;
   data: PaginatedPayload;
+}
+interface ToggleActiveResponse {
+  success: boolean;
+  message: string;
+  data: { id: number; is_active: boolean };
 }
 
 @Component({
@@ -88,7 +89,6 @@ export class ProductListComponent implements OnInit {
   // raw + filtered data
   products: Product[] = [];
   filteredProducts: Product[] = [];
-
   searchTerm = '';
   loading = false;
 
@@ -125,7 +125,6 @@ export class ProductListComponent implements OnInit {
   onSearch(): void {
     this.applyFilter();
   }
-
   applyFilter(): void {
     const term = this.searchTerm.trim().toLowerCase();
     this.filteredProducts = !term
@@ -144,25 +143,20 @@ export class ProductListComponent implements OnInit {
     const start = (this.page - 1) * this.pageSize;
     return this.filteredProducts.slice(start, start + this.pageSize);
   }
-
   get totalPages(): number {
     return Math.max(1, Math.ceil(this.filteredProducts.length / this.pageSize));
   }
-
   get pageNumbers(): (number | string)[] {
     return this.buildPageNumbers(this.page, this.totalPages);
   }
-
   goToPage(page: number | string): void {
     if (typeof page !== 'number') return;
     if (page < 1 || page > this.totalPages) return;
     this.page = page;
   }
-
   onPageSizeChange(): void {
     this.page = 1;
   }
-
   // Builds a compact page list with ellipses, e.g. 1 ... 4 5 6 ... 20
   private buildPageNumbers(current: number, total: number): (number | string)[] {
     const delta = 1;
@@ -194,7 +188,6 @@ export class ProductListComponent implements OnInit {
     const firstColorWithImage = prod.colors?.find(c => c.images?.length);
     return firstColorWithImage ? firstColorWithImage.images[0] : 'assets/images/no-image.png';
   }
-
   getTotalQuantity(prod: Product): number {
     if (!prod.colors?.length) return 0;
     return prod.colors.reduce((sum, c) => {
@@ -202,18 +195,15 @@ export class ProductListComponent implements OnInit {
       return sum + colorStock;
     }, 0);
   }
-
   getColorNames(prod: Product): ColorRef[] {
     return prod.colors?.map(c => c.color).filter(Boolean) ?? [];
   }
-
   getAllSizes(prod: Product): string {
     if (!prod.colors?.length) return '—';
     const sizeSet = new Set<string>();
     prod.colors.forEach(c => c.inventories?.forEach(inv => sizeSet.add(inv.size)));
     return sizeSet.size ? Array.from(sizeSet).join(', ') : '—';
   }
-
   listTypeLabel(type: string): string {
     switch (type) {
       case 'trending_now': return 'Trending now';
@@ -222,7 +212,6 @@ export class ProductListComponent implements OnInit {
       default: return type;
     }
   }
-
   listTypeClass(type: string): string {
     switch (type) {
       case 'trending_now': return 'tag-trending';
@@ -231,7 +220,6 @@ export class ProductListComponent implements OnInit {
       default: return 'tag-regular';
     }
   }
-
   publishedClass(isPublished: boolean): string {
     return isPublished ? 'status-active' : 'status-inactive';
   }
@@ -240,16 +228,37 @@ export class ProductListComponent implements OnInit {
   trackByProduct(index: number, item: Product): number {
     return item.id;
   }
-
   viewProduct(item: Product): void {
     this.router.navigate(['/superadmin/products/list/view-product/', item.id]);
   }
-
   editProduct(item: Product): void {
     this.router.navigate(['/superadmin/products/list/update-product/', item.id]);
   }
-
   goToAddProduct(): void {
     this.router.navigate(['/superadmin/products/list/add']);
+  }
+
+  // ---------------- ✅ NEW — Active / Inactive toggle ----------------
+  toggleProductActive(prod: Product, event: Event): void {
+    event.stopPropagation();
+    if (prod._togglingActive) return;
+
+    const previous = prod.is_active;
+    prod._togglingActive = true;
+    // optimistic UI update
+    prod.is_active = !prod.is_active;
+
+    this.apiServices.toggleProductActive<ToggleActiveResponse>(prod.id).subscribe({
+      next: (res) => {
+        prod.is_active = res?.data?.is_active ?? prod.is_active;
+        prod._togglingActive = false;
+      },
+      error: (err: any) => {
+        console.log(err);
+        // revert on failure
+        prod.is_active = previous;
+        prod._togglingActive = false;
+      }
+    });
   }
 }
