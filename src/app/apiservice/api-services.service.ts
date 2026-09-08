@@ -865,31 +865,31 @@ export class ApiServicesService {
   );
 }
 
-  public addAdminReview<T>(payload: any): Observable<T> {
-    const serviceURL = `${this.urlHelper.getAPIURL()}${this.envUrl.addAdminReview}`;
-    return this.http
-      .post<T>(serviceURL, payload, { headers: this.getHeaders() })
-      .pipe(
-        catchError((error) => {
-          if (error.status === 403) {
-            sessionStorage.clear();
-            localStorage.clear();
-            this.router.navigate(['/auth/sign-in']);
-          }
-          if (
-            error.error.success === false &&
-            error.error.message == 'Session expired'
-          ) {
-            this.router.navigate(['/auth/sign-in']);
-          }
-          return throwError(() => ({
-            statusCode: 500,
-            message: 'Add Admin Review API error',
-            error,
-          }));
-        }),
-      );
-  }
+  public addAdminReview<T>(payload: FormData): Observable<T> {
+  const serviceURL = `${this.urlHelper.getAPIURL()}${this.envUrl.addAdminReview}`;
+  return this.http
+    .post<T>(serviceURL, payload, { headers: this.getHeadersforFormdata() })
+    .pipe(
+      catchError((error) => {
+        if (error.status === 403) {
+          sessionStorage.clear();
+          localStorage.clear();
+          this.router.navigate(['/auth/sign-in']);
+        }
+        if (
+          error.error.success === false &&
+          error.error.message == 'Session expired'
+        ) {
+          this.router.navigate(['/auth/sign-in']);
+        }
+        return throwError(() => ({
+          statusCode: 500,
+          message: 'Add Admin Review API error',
+          error,
+        }));
+      }),
+    );
+}
 
   public approveReview<T>(id: number, isApproved: boolean): Observable<T> {
     const serviceURL = `${this.urlHelper.getAPIURL()}${this.envUrl.approveReview}/${id}/approve`;

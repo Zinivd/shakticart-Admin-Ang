@@ -21,6 +21,7 @@ interface Review {
   title?: string;
   description?: string;
   rating: number;
+  image?: string; // ✅ NEW
   is_approved: boolean;
   created_at?: string;
   user?: ReviewUser;
@@ -79,6 +80,11 @@ export class ProductReviewComponent implements OnInit, OnDestroy {
     description: ''
   };
 
+  // ✅ NEW — image upload state
+  selectedImageFile: File | null = null;
+  imagePreviewUrl: string | ArrayBuffer | null = null;
+  imageError = '';
+
   // product searchable dropdown
   allProducts: Product[] = [];
   filteredProducts: Product[] = [];
@@ -96,20 +102,13 @@ export class ProductReviewComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
-    // ✅ Tracks whether a route/query param already triggered a load,
-    // so we don't fire loadReviews() twice on init.
     let initialLoadDone = false;
 
-    // Subscribe reactively instead of reading snapshot once. This covers:
-    //  1) the route param not existing
-    //  2) Angular reusing this component instance when navigating from one
-    //     product's review page to another's
     this.routeSub = this.route.paramMap.subscribe(params => {
       const routeProductId =
         params.get('product_id') ||
         params.get('productId') ||
         params.get('id');
-
       if (routeProductId) {
         this.productId = routeProductId;
         this.productIdInput = routeProductId;
@@ -118,7 +117,6 @@ export class ProductReviewComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Also support ?product_id=123 as a query param
     this.queryParamSub = this.route.queryParamMap.subscribe(params => {
       const qpProductId = params.get('product_id');
       if (qpProductId && !this.productIdInput) {
@@ -128,7 +126,6 @@ export class ProductReviewComponent implements OnInit, OnDestroy {
       }
     });
 
-    // ✅ No product id anywhere (route param or query param) -> load ALL reviews
     if (!initialLoadDone) {
       this.loadReviews();
     }
@@ -144,11 +141,8 @@ export class ProductReviewComponent implements OnInit, OnDestroy {
     this.loadError = '';
     this.productId = this.productIdInput.trim();
     this.loading = true;
-
     const status = this.statusFilter === 'all' ? undefined : this.statusFilter;
 
-    // ✅ If productId is empty, pass undefined so the service hits the
-    // "all reviews" endpoint instead of one scoped to a product id.
     this.apiServices.getAdminReviews<ReviewsApiResponse>(this.productId || undefined, status).subscribe({
       next: (res) => {
         this.reviews = res?.data || [];
@@ -169,7 +163,6 @@ export class ProductReviewComponent implements OnInit, OnDestroy {
     });
   }
 
-  // lets the input's (keyup.enter) trigger a load without a page reload
   onProductIdKeyEnter(): void {
     this.loadReviews();
   }
@@ -179,7 +172,6 @@ export class ProductReviewComponent implements OnInit, OnDestroy {
     this.loadReviews();
   }
 
-  // ✅ NEW — lets the UI clear the product filter and reload all reviews
   clearProductFilter(): void {
     this.productIdInput = '';
     this.page = 1;
@@ -190,6 +182,7 @@ export class ProductReviewComponent implements OnInit, OnDestroy {
   onSearch(): void {
     this.applyFilters();
   }
+
   private applyFilters(): void {
     const term = this.searchTerm.trim().toLowerCase();
     this.filteredReviews = !term
@@ -295,18 +288,79 @@ export class ProductReviewComponent implements OnInit, OnDestroy {
     };
     this.selectedProductLabel = '';
     this.productSearchTerm = '';
+    // ✅ NEW — reset image state every time modal opens
+    this.selectedImageFile = null;
+    this.imagePreviewUrl = null;
+    this.imageError = '';
     this.showAddModal = true;
     this.loadProducts();
   }
+
   closeAddModal(): void {
     this.showAddModal = false;
   }
+
+  // ✅ NEW — image select handler
+  onImageSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      this.imageError = 'Only JPG, PNG, or WEBP images are allowed.';
+      input.value = '';
+      return;
+    }
+
+    const maxSizeBytes = 2 * 1024 * 1024; // 2MB — matches backend max:2048
+    if (file.size > maxSizeBytes) {
+      this.imageError = 'Image must be smaller than 2MB.';
+      input.value = '';
+      return;
+    }
+
+    this.imageError = '';
+    this.selectedImageFile = file;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.imagePreviewUrl = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ✅ NEW — remove/clear selected image
+  removeImage(inputEl: HTMLInputElement): void {
+    this.selectedImageFile = null;
+    this.imagePreviewUrl = null;
+    this.imageError = '';
+    inputEl.value = '';
+  }
+
+  // ✅ UPDATED — now builds FormData instead of a plain JSON object
   submitAdminReview(): void {
     if (!this.newReview.product_id || !this.newReview.name || !this.newReview.email) {
       return;
     }
     this.saving = true;
-    this.apiServices.addAdminReview<any>(this.newReview).subscribe({
+
+    const formData = new FormData();
+    formData.append('product_id', String(this.newReview.product_id));
+    formData.append('name', this.newReview.name);
+    formData.append('email', this.newReview.email);
+    formData.append('rating', String(this.newReview.rating));
+    if (this.newReview.title) {
+      formData.append('title', this.newReview.title);
+    }
+    if (this.newReview.description) {
+      formData.append('description', this.newReview.description);
+    }
+    if (this.selectedImageFile) {
+      formData.append('image', this.selectedImageFile);
+    }
+
+    this.apiServices.addAdminReview<any>(formData).subscribe({
       next: () => {
         this.saving = false;
         this.showAddModal = false;
@@ -322,7 +376,7 @@ export class ProductReviewComponent implements OnInit, OnDestroy {
 
   // ---------------- Product dropdown ----------------
   loadProducts(): void {
-    if (this.allProducts.length) return; // already loaded, don't refetch every open
+    if (this.allProducts.length) return;
     this.loadingProducts = true;
     this.apiServices.getAllProducts<any>().subscribe({
       next: (res: any) => {

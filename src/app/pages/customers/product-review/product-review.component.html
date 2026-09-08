@@ -7,18 +7,10 @@
     <!-- Filters -->
     <div class="filters-row">
       <div class="product-lookup">
-        <input
-          type="text"
-          class="search-input"
-          placeholder="Enter Product ID (leave blank for all)..."
-          [(ngModel)]="productIdInput"
-          (keyup.enter)="onProductIdKeyEnter()" />
+        <input type="text" class="search-input" placeholder="Enter Product ID (leave blank for all)..."
+          [(ngModel)]="productIdInput" (keyup.enter)="onProductIdKeyEnter()" />
         <button class="secondary-btn" (click)="loadReviews()">Load</button>
-        <button
-          *ngIf="productIdInput"
-          class="secondary-btn"
-          type="button"
-          (click)="clearProductFilter()">
+        <button *ngIf="productIdInput" class="secondary-btn" type="button" (click)="clearProductFilter()">
           Clear
         </button>
       </div>
@@ -27,11 +19,7 @@
         <option value="pending">Pending</option>
         <option value="approved">Approved</option>
       </select>
-      <input
-        type="text"
-        class="search-input"
-        placeholder="Search reviewer, title..."
-        [(ngModel)]="searchTerm"
+      <input type="text" class="search-input" placeholder="Search reviewer, title..." [(ngModel)]="searchTerm"
         (ngModelChange)="onSearch()" />
     </div>
 
@@ -77,12 +65,8 @@
             <td><span [ngClass]="statusClass(review)">{{ review.is_approved ? 'Approved' : 'Pending' }}</span></td>
             <td>{{ formatDate(review.created_at) }}</td>
             <td class="action-col">
-              <button
-                class="toggle-btn"
-                [class.approve]="!review.is_approved"
-                [class.unapprove]="review.is_approved"
-                [disabled]="approvingId === review.id"
-                (click)="toggleApproval(review)">
+              <button class="toggle-btn" [class.approve]="!review.is_approved" [class.unapprove]="review.is_approved"
+                [disabled]="approvingId === review.id" (click)="toggleApproval(review)">
                 <span *ngIf="approvingId !== review.id">{{ review.is_approved ? 'Unapprove' : 'Approve' }}</span>
                 <span *ngIf="approvingId === review.id" class="mini-spinner"></span>
               </button>
@@ -132,17 +116,10 @@
         <label>Product</label>
         <div class="product-dropdown">
           <div class="product-dropdown-input" (click)="openProductDropdown()">
-            <input
-              type="text"
-              [(ngModel)]="productSearchTerm"
-              (ngModelChange)="onProductSearch()"
-              (focus)="openProductDropdown()"
-              (blur)="closeProductDropdownDelayed()"
+            <input type="text" [(ngModel)]="productSearchTerm" (ngModelChange)="onProductSearch()"
+              (focus)="openProductDropdown()" (blur)="closeProductDropdownDelayed()"
               [placeholder]="selectedProductLabel || 'Search product by name...'" />
-            <button
-              *ngIf="newReview.product_id"
-              type="button"
-              class="clear-selection-btn"
+            <button *ngIf="newReview.product_id" type="button" class="clear-selection-btn"
               (click)="clearProductSelection()">&times;</button>
           </div>
           <div class="product-dropdown-list" *ngIf="showProductDropdown">
@@ -150,11 +127,8 @@
             <div *ngIf="!loadingProducts && filteredProducts.length === 0" class="dropdown-empty">
               No products found
             </div>
-            <div
-              *ngFor="let product of filteredProducts"
-              class="dropdown-option"
-              [class.selected]="product.id === newReview.product_id"
-              (mousedown)="selectProduct(product)">
+            <div *ngFor="let product of filteredProducts" class="dropdown-option"
+              [class.selected]="product.id === newReview.product_id" (mousedown)="selectProduct(product)">
               <span class="option-name">{{ productLabel(product) }}</span>
               <span class="option-id">ID: {{ product.id }}</span>
             </div>
@@ -190,6 +164,30 @@
         <label>Description</label>
         <textarea rows="4" [(ngModel)]="newReview.description" placeholder="Review description (optional)"></textarea>
       </div>
+
+      <div class="form-group">
+        <label>Review Image (optional)</label>
+        <div class="image-upload-area">
+          <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" #imageInput style="display:none"
+            (change)="onImageSelected($event)" />
+
+          <div class="image-preview-box" *ngIf="imagePreviewUrl">
+            <img [src]="imagePreviewUrl" alt="Preview" class="image-preview" />
+            <button type="button" class="remove-image-btn" (click)="removeImage(imageInput)">&times;</button>
+          </div>
+
+          <button type="button" class="upload-image-btn" *ngIf="!imagePreviewUrl" (click)="imageInput.click()">
+            + Upload Image
+          </button>
+
+          <button type="button" class="secondary-btn reupload-btn" *ngIf="imagePreviewUrl" (click)="imageInput.click()">
+            Change Image
+          </button>
+        </div>
+        <div class="image-error" *ngIf="imageError">{{ imageError }}</div>
+      </div>
+
+
     </div>
     <div class="review-modal-footer">
       <button class="secondary-btn" (click)="closeAddModal()">Cancel</button>
